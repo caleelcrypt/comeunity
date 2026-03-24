@@ -141,18 +141,18 @@ export default function LandingPage() {
             <i className="fas fa-ellipsis-v"></i>
           </div>
           <div className={`dropdown-menu ${showDropdown ? 'open' : ''}`} id="dropdownMenu">
-            <div className="dropdown-item" onClick={() => showNotification('Community Guidelines')}>
-              <i className="fas fa-handshake"></i>
-              <span>ComeUnity Guidelines</span>
-            </div>
-            <div className="dropdown-item" onClick={() => showNotification('Privacy Policy')}>
-              <i className="fas fa-shield-alt"></i>
-              <span>Privacy Policy</span>
-            </div>
-            <div className="dropdown-item" onClick={() => showNotification('Terms of Service')}>
-              <i className="fas fa-file-contract"></i>
-              <span>Terms of Service</span>
-            </div>
+           <div className="dropdown-item" onClick={() => router.push('/legal/guidelines')}>
+  <i className="fas fa-handshake"></i>
+  <span>ComeUnity Guidelines</span>
+</div>
+<div className="dropdown-item" onClick={() => router.push('/legal/privacy')}>
+  <i className="fas fa-shield-alt"></i>
+  <span>Privacy Policy</span>
+</div>
+<div className="dropdown-item" onClick={() => router.push('/legal/terms')}>
+  <i className="fas fa-file-contract"></i>
+  <span>Terms of Service</span>
+</div>
             <div className="dropdown-divider"></div>
             <div className="dropdown-item" onClick={openReviewModal}>
               <i className="fas fa-star"></i>
