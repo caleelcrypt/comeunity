@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import styles from './BottomNav.module.css';
 
 interface BottomNavProps {
   currentPage: number;
@@ -32,7 +33,7 @@ export default function BottomNav({ currentPage, onPageChange }: BottomNavProps)
     const y = clientY - rect.top - size / 2;
     
     const ripple = document.createElement('span');
-    ripple.classList.add('ripple-effect');
+    ripple.className = styles.ripple;
     ripple.style.width = ripple.style.height = `${size}px`;
     ripple.style.left = `${x}px`;
     ripple.style.top = `${y}px`;
@@ -55,12 +56,11 @@ export default function BottomNav({ currentPage, onPageChange }: BottomNavProps)
   };
 
   return (
-    <div className="bottom-nav">
+    <div className={styles.bottomNav}>
       {navItems.map((item, index) => (
         <div
           key={index}
-          className={`nav-item ${currentPage === index ? 'active' : ''}`}
-          data-nav={index}
+          className={`${styles.navItem} ${currentPage === index ? styles.active : ''}`}
           onClick={(e) => handleNavClick(index, e)}
         >
           <i className={item.icon}></i>

@@ -7,8 +7,9 @@ import LandingPage from './components/Landing/LandingPage';
 import AuthForm from './components/Auth/AuthForm';
 import { supabase } from '../lib/supabaseClient';
 
-// Dynamically import MainLayout to avoid SSR issues
+// Dynamically import components
 const MainLayout = dynamic(() => import('./components/Navigation/MainLayout'), { ssr: false });
+const PublicProfilePage = dynamic(() => import('./pages/PublicProfile'), { ssr: false });
 
 export default function Page() {
   const pathname = usePathname();
@@ -52,7 +53,12 @@ export default function Page() {
     return <AuthForm />;
   }
 
-  // If authenticated, show main layout
+  // Profile path - check if it's a profile URL like /profile/username
+  if (pathname.startsWith('/profile/')) {
+    return <PublicProfilePage />;
+  }
+
+  // Feed path and other protected routes
   if (isAuthenticated) {
     return <MainLayout />;
   }

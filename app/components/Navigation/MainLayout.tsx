@@ -6,6 +6,7 @@ import SliderContainer from './SliderContainer';
 import FeedPage from '../../pages/Feed';
 import UnitiesPage from '../../pages/Unities';
 import UserProfilePage from '../../pages/UserProfile';
+import styles from './MainLayout.module.css';
 
 export default function MainLayout() {
   const pathname = usePathname();
@@ -47,29 +48,21 @@ export default function MainLayout() {
 
   if (!isClient) {
     return (
-      <div className="phone-frame">
-        <div className="pages-container">
-          <div className="slider-track">
-            {pages.map((page, index) => (
-              <div key={index} className="page-panel">
-                {page}
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className={styles.phoneFrame}>
+        <SliderContainer currentPage={currentPage} onPageChange={handlePageChange}>
+          {pages}
+        </SliderContainer>
+        <BottomNav currentPage={currentPage} onPageChange={handlePageChange} />
       </div>
     );
   }
 
   return (
-    <div className="phone-frame">
+    <div className={styles.phoneFrame}>
       <SliderContainer currentPage={currentPage} onPageChange={handlePageChange}>
         {pages}
       </SliderContainer>
       <BottomNav currentPage={currentPage} onPageChange={handlePageChange} />
-      <div className="drag-indicator">
-        <i className="fas fa-grip-lines"></i> swipe / tap menu
-      </div>
     </div>
   );
 }

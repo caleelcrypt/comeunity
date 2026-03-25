@@ -1,5 +1,6 @@
 'use client';
 import React, { useRef, useState, useEffect } from 'react';
+import styles from './SliderContainer.module.css';
 
 interface SliderContainerProps {
   children: React.ReactNode[];
@@ -17,7 +18,6 @@ export default function SliderContainer({ children, currentPage, onPageChange }:
   const lastMoveX = useRef(0);
   const lastMoveTime = useRef(0);
 
-  // Only run on client
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -130,7 +130,6 @@ export default function SliderContainer({ children, currentPage, onPageChange }:
     e.preventDefault();
   };
 
-  // Mouse events for desktop
   const [isMouseDown, setIsMouseDown] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -155,13 +154,12 @@ export default function SliderContainer({ children, currentPage, onPageChange }:
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Don't render interactive elements until client-side
   if (!isClient) {
     return (
-      <div ref={containerRef} className="pages-container">
-        <div ref={sliderTrackRef} className="slider-track">
+      <div ref={containerRef} className={styles.pagesContainer}>
+        <div ref={sliderTrackRef} className={styles.sliderTrack}>
           {children.map((child, index) => (
-            <div key={index} className="page-panel" data-index={index}>
+            <div key={index} className={styles.pagePanel}>
               {child}
             </div>
           ))}
@@ -173,19 +171,22 @@ export default function SliderContainer({ children, currentPage, onPageChange }:
   return (
     <div 
       ref={containerRef}
-      className="pages-container"
+      className={styles.pagesContainer}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onMouseDown={handleMouseDown}
       onDragStart={(e) => e.preventDefault()}
     >
-      <div ref={sliderTrackRef} className="slider-track">
+      <div ref={sliderTrackRef} className={styles.sliderTrack}>
         {children.map((child, index) => (
-          <div key={index} className="page-panel" data-index={index}>
+          <div key={index} className={styles.pagePanel}>
             {child}
           </div>
         ))}
+      </div>
+      <div className={styles.dragIndicator}>
+        <i className="fas fa-grip-lines"></i> swipe / tap menu
       </div>
     </div>
   );
