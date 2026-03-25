@@ -46,6 +46,8 @@ type Post = {
   comments_count: number;
   liked_by_user: boolean;
   created_at: string;
+  // Add this line 👇
+  user_id: string;
 };
 
 type Unity = {
@@ -208,15 +210,15 @@ const [achievements, setAchievements] = useState<Achievement[]>([]);
     }
     
     // 3. Fetch posts
-    const { data: postsData } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("user_id", authUser.id)
-      .order("created_at", { ascending: false });
-    
-    if (postsData) {
-      setPosts(postsData);
-    }
+const { data: postsData } = await supabase
+  .from("posts")
+  .select("*")
+  .eq("user_id", authUser.id)
+  .order("created_at", { ascending: false });
+
+if (postsData) {
+  setPosts(postsData); // This should include user_id if it exists in the table
+}
     
     // 4. Fetch unities
     const { data: unitiesData } = await supabase
