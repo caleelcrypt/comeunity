@@ -129,11 +129,12 @@ export default function MyProfilePage() {
   const [showToast, setShowToast] = useState<string | null>(null);
   
   // Data states
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [unities, setUnities] = useState<Unity[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [ownedAvatars, setOwnedAvatars] = useState<string[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+const [posts, setPosts] = useState<Post[]>([]);
+const [unities, setUnities] = useState<Unity[]>([]);
+const [transactions, setTransactions] = useState<Transaction[]>([]);
+const [ownedAvatars, setOwnedAvatars] = useState<string[]>([]);
+const [currentAvatar, setCurrentAvatar] = useState('😎'); // ← ADD THIS
+const [achievements, setAchievements] = useState<Achievement[]>([]);
   
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -184,16 +185,17 @@ export default function MyProfilePage() {
       .single();
     
     if (profileData) {
-      setProfile(profileData);
-      setEditForm({
-        first_name: profileData.first_name,
-        last_name: profileData.last_name,
-        bio: profileData.bio || '',
-        category: profileData.category || 'Art',
-        website: profileData.website || '',
-        location: profileData.location || ''
-      });
-    }
+  setProfile(profileData);
+  setCurrentAvatar(profileData.avatar || '😎'); // ← ADD THIS LINE
+  setEditForm({
+    first_name: profileData.first_name,
+    last_name: profileData.last_name,
+    bio: profileData.bio || '',
+    category: profileData.category || 'Art',
+    website: profileData.website || '',
+    location: profileData.location || ''
+  });
+}
     
     // 2. Fetch owned avatars
     const { data: avatarsData } = await supabase
