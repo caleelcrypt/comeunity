@@ -133,9 +133,8 @@ const [posts, setPosts] = useState<Post[]>([]);
 const [unities, setUnities] = useState<Unity[]>([]);
 const [transactions, setTransactions] = useState<Transaction[]>([]);
 const [ownedAvatars, setOwnedAvatars] = useState<string[]>([]);
-const [currentAvatar, setCurrentAvatar] = useState('😎'); // ← ADD THIS
+const [currentAvatar, setCurrentAvatar] = useState('😎'); // ← ADD THIS LINE
 const [achievements, setAchievements] = useState<Achievement[]>([]);
-  
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAvatarShop, setShowAvatarShop] = useState(false);
