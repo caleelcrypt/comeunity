@@ -38,6 +38,7 @@ type Transaction = {
 
 type Post = {
   id: string;
+  user_id: string;  // ← ADD THIS LINE
   content: string;
   link?: string;
   link_domain?: string;
@@ -46,8 +47,6 @@ type Post = {
   comments_count: number;
   liked_by_user: boolean;
   created_at: string;
-  // Add this line 👇
-  user_id: string;
 };
 
 type Unity = {
@@ -477,47 +476,53 @@ if (postsData) {
   };
   
   const handleTipPost = async (postId: string, postUserId: string) => {
-    if (!profile) return;
+  if (!profile) return;
+  
+  // If no postUserId, don't tip
+  if (!postUserId) {
+    showToastMessage("Cannot tip this post");
+    return;
+  }
+  
+  const tipAmount = 20;
+  if (profile.coins >= tipAmount) {
+    const newCoins = profile.coins - tipAmount;
     
-    const tipAmount = 20;
-    if (profile.coins >= tipAmount) {
-      const newCoins = profile.coins - tipAmount;
-      
-      await supabase
-        .from("profiles")
-        .update({ coins: newCoins })
-        .eq("id", profile.id);
-      
-      await supabase
-        .from("profiles")
-        .update({ coins: profile.coins + tipAmount })
-        .eq("id", postUserId);
-      
-      await supabase
-        .from("transactions")
-        .insert({
-          user_id: profile.id,
-          type: 'Sent Tip',
-          amount: tipAmount
-        });
-      
-      setProfile({ ...profile, coins: newCoins });
-      setTransactions([
-        {
-          id: Date.now().toString(),
-          type: 'Sent Tip',
-          amount: tipAmount,
-          created_at: new Date().toISOString()
-        },
-        ...transactions
-      ]);
-      
-      await earnXP(10, `Tipped a post`);
-      showToastMessage(`💎 Tipped ${tipAmount} coins! +10 XP`);
-    } else {
-      showToastMessage(`❌ Insufficient coins! Need ${tipAmount - profile.coins} more.`);
-    }
-  };
+    await supabase
+      .from("profiles")
+      .update({ coins: newCoins })
+      .eq("id", profile.id);
+    
+    await supabase
+      .from("profiles")
+      .update({ coins: profile.coins + tipAmount })
+      .eq("id", postUserId);
+    
+    await supabase
+      .from("transactions")
+      .insert({
+        user_id: profile.id,
+        type: 'Sent Tip',
+        amount: tipAmount
+      });
+    
+    setProfile({ ...profile, coins: newCoins });
+    setTransactions([
+      {
+        id: Date.now().toString(),
+        type: 'Sent Tip',
+        amount: tipAmount,
+        created_at: new Date().toISOString()
+      },
+      ...transactions
+    ]);
+    
+    await earnXP(10, `Tipped a post`);
+    showToastMessage(`💎 Tipped ${tipAmount} coins! +10 XP`);
+  } else {
+    showToastMessage(`❌ Insufficient coins! Need ${tipAmount - profile.coins} more.`);
+  }
+};
   
   const handleCreatePost = () => {
     router.push('/create');
@@ -756,9 +761,13 @@ if (postsData) {
                       <button className={styles.actionBtn} onClick={() => showToastMessage(`${post.comments_count} comments`)}>
                         <i className="far fa-comment"></i> {post.comments_count}
                       </button>
-                      <button className={styles.actionBtn} onClick={() => handleTipPost(post.id, post.user_id)}>
-                        <i className="fas fa-coins"></i> Tip
-                      </button>
+                      <button 
+  className={styles.actionBtn} 
+  onClick={() => post.user_id && handleTipPost(post.id, post.user_id)}
+  disabled={!post.user_id}
+>
+  <i className="fas fa-coins"></i> Tip
+</button>
                     </div>
                   </div>
                 ))
