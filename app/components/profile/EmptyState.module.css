@@ -1,0 +1,39 @@
+.emptyState {
+  text-align: center;
+  padding: 48px 20px;
+  background: var(--surface-glass);
+  border-radius: 32px;
+  margin-top: 12px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  opacity: 0.6;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: white;
+}
+
+.emptyMessage {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+.emptyAction {
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, var(--gradient-1), var(--gradient-3));
+  border: none;
+  border-radius: 40px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}

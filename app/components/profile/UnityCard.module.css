@@ -1,0 +1,101 @@
+.unityCard {
+  background: var(--surface-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 24px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.unityCard:hover {
+  background: var(--surface-glass-hover);
+  transform: translateX(4px);
+}
+
+.unityLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.unityIconLarge {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, var(--gradient-1), var(--gradient-3));
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.unityInfo {
+  flex: 1;
+}
+
+.unityName {
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: white;
+}
+
+.tagFounder {
+  background: linear-gradient(135deg, #ffd966, #ffb347);
+  padding: 2px 8px;
+  border-radius: 40px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #1e1e2a;
+  letter-spacing: 0.5px;
+}
+
+.tagContributor {
+  background: linear-gradient(135deg, #a0a0ff, #6c63ff);
+  padding: 2px 8px;
+  border-radius: 40px;
+  font-size: 9px;
+  font-weight: 700;
+  color: white;
+}
+
+.tagMember {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 40px;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.unityStats {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+.viewUnityBtn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-glass);
+  padding: 8px 16px;
+  border-radius: 40px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.viewUnityBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

@@ -1,4 +1,4 @@
-/* MainLayout.module.css - Simple layout, no slider */
+/* MainLayout.module.css */
 
 .phoneFrame {
   width: 100%;
@@ -30,8 +30,17 @@
   }
 }
 
-/* For desktop - centered */
+/* For desktop - centered with margin */
 @media (min-width: 768px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+  
   .phoneFrame {
     height: 780px;
     border-radius: 44px;
@@ -39,6 +48,9 @@
     max-width: 480px;
     width: 100%;
     box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5);
+    position: relative;
+    top: auto;
+    transform: none;
   }
 }
 

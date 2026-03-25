@@ -1,0 +1,25 @@
+.profileStats {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.profileStat {
+  text-align: center;
+  cursor: pointer;
+}
+
+.statNumber {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--gradient-1), var(--gradient-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}

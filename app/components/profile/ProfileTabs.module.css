@@ -1,0 +1,28 @@
+.profileTabs {
+  display: flex;
+  gap: 8px;
+  background: var(--surface-glass);
+  padding: 4px;
+  border-radius: 100px;
+  margin: 16px 0;
+}
+
+.profileTab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: 0.2s;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+
+.profileTab.active {
+  background: linear-gradient(135deg, var(--gradient-1), var(--gradient-3));
+  color: white;
+}

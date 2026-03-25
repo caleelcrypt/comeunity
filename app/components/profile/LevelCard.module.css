@@ -1,0 +1,114 @@
+.playerStatus {
+  background: var(--surface-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 24px;
+  padding: 18px 16px;
+  margin-bottom: 16px;
+}
+
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fameLevel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 2;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.levelBadge {
+  background: linear-gradient(135deg, var(--gradient-1), var(--gradient-3));
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.levelProgress {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 100px;
+}
+
+.levelProgressFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gradient-1), var(--gradient-3));
+  transition: width 0.3s;
+}
+
+.xpText {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.streakBadgeLarge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 77, 109, 0.2);
+  padding: 8px 14px;
+  border-radius: 100px;
+  color: var(--gradient-1);
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+}
+
+.referralBadgeLarge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(181, 23, 158, 0.2));
+  padding: 8px 14px;
+  border-radius: 100px;
+  color: var(--gradient-3);
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  border: 1px solid rgba(67, 97, 238, 0.4);
+  transition: 0.2s;
+  margin-left: 8px;
+}
+
+.referralBadgeLarge:hover {
+  background: rgba(67, 97, 238, 0.3);
+  transform: scale(1.02);
+}
+
+.statsRowMini {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.statMini {
+  text-align: center;
+  flex: 1;
+}
+
+.statValueMini {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gradient-2);
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}

@@ -31,7 +31,6 @@ export default function MainLayout() {
     if (index === 2) router.push('/profile/me');
   };
 
-  // For profile pages that are not /profile/me, show PublicProfilePage
   const isProfilePage = pathname?.startsWith('/profile/') && pathname !== '/profile/me';
   
   if (isProfilePage) {
@@ -43,7 +42,6 @@ export default function MainLayout() {
     );
   }
 
-  // Simple page render - no slider
   const renderPage = () => {
     switch (currentPage) {
       case 0:

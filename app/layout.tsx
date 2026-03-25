@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ height: '100%' }}>
       <head>
         <link 
           rel="stylesheet" 
@@ -26,7 +26,7 @@ export default function RootLayout({
           rel="stylesheet" 
         />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} style={{ height: '100%', margin: 0, padding: 0 }}>
         {children}
       </body>
     </html>

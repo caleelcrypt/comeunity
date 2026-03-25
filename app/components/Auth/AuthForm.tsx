@@ -408,7 +408,7 @@ const AuthForm: React.FC = () => {
     }
   }, []);
 
-  const fetchUserProfile = async (authUser: any) => {
+ const fetchUserProfile = async (authUser: any) => {
   try {
     const { data, error } = await supabase
       .from("profiles")
@@ -417,12 +417,13 @@ const AuthForm: React.FC = () => {
       .single();
     
     if (error) {
-      // If profile not found, it's okay - user just signed up
+      // If profile not found (PGRST116 = no rows returned), it's okay
       if (error.code === 'PGRST116') {
-        console.log("Profile not found yet, waiting for creation...");
+        console.log("Profile not found yet. User may have just signed up.");
         return;
       }
-      console.error("Error fetching profile:", error);
+      // For other errors, log them but don't break the app
+      console.warn("Profile fetch warning:", error.message);
       return;
     }
     
@@ -430,7 +431,7 @@ const AuthForm: React.FC = () => {
       setUser(data as UserProfile);
     }
   } catch (err) {
-    console.error("Unexpected error fetching profile:", err);
+    console.log("Profile fetch skipped:", err);
   }
 };
 

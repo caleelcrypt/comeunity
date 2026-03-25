@@ -1,0 +1,103 @@
+.avatar-shop-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  z-index: 10001;
+  display: none;
+  overflow-y: auto;
+}
+
+.avatar-shop-modal.show {
+  display: block;
+}
+
+.shop-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-glass);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+}
+
+.shop-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+}
+
+.free-avatars-grid,
+.premium-avatars-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+.avatar-item {
+  text-align: center;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 20px;
+  transition: 0.2s;
+}
+
+.avatar-item:hover {
+  background: var(--surface-glass-hover);
+}
+
+.avatar-item.selected {
+  background: linear-gradient(135deg, rgba(255, 77, 109, 0.2), rgba(67, 97, 238, 0.2));
+  border: 1px solid var(--gradient-2);
+}
+
+.avatar-preview {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gradient-1), var(--gradient-3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.avatar-name {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+  color: white;
+}
+
+.premium-avatar-card {
+  background: var(--surface-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 20px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.premium-avatar-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--gradient-2);
+}
+
+.purchase-btn {
+  background: linear-gradient(135deg, gold, orange);
+  border: none;
+  border-radius: 100px;
+  padding: 8px 16px;
+  color: black;
+  font-weight: 600;
+  width: 100%;
+  margin-top: 8px;
+  cursor: pointer;
+}
