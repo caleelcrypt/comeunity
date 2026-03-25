@@ -20,3 +20,52 @@
   width: 0;
   background: transparent;
 }
+
+
+/* MainLayout.module.css - Responsive phone frame */
+
+.phoneFrame {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  background: #0c0c12;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* Desktop styles */
+@media (min-width: 768px) {
+  .phoneFrame {
+    height: 780px;
+    border-radius: 44px;
+    margin: 20px auto;
+  }
+}
+
+/* Mobile full screen */
+@media (max-width: 767px) {
+  .phoneFrame {
+    height: 100vh;
+    border-radius: 0;
+    max-width: 100%;
+  }
+}
+
+/* Scrollbar hiding */
+.phoneFrame ::-webkit-scrollbar {
+  width: 4px;
+}
+
+.phoneFrame ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.phoneFrame ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ff4d6d, #b5179e);
+  border-radius: 4px;
+}

@@ -53,13 +53,10 @@ export default function Page() {
     return <AuthForm />;
   }
 
-  // Profile path - check if it's a profile URL like /profile/username
-  if (pathname.startsWith('/profile/')) {
-    return <PublicProfilePage />;
-  }
-
-  // Feed path and other protected routes
+  // Feed, unities, and profile/me are all protected routes
   if (isAuthenticated) {
+    // /profile/me and /profile/username are both handled by MainLayout
+    // MainLayout will determine which profile page to show
     return <MainLayout />;
   }
 
