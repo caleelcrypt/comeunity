@@ -184,7 +184,7 @@ const [achievements, setAchievements] = useState<Achievement[]>([]);
       .eq("id", authUser.id)
       .single();
     
-    if (profileData) {
+   if (profileData) {
   setProfile(profileData);
   setCurrentAvatar(profileData.avatar || '😎'); // ← ADD THIS LINE
   setEditForm({
@@ -196,7 +196,6 @@ const [achievements, setAchievements] = useState<Achievement[]>([]);
     location: profileData.location || ''
   });
 }
-    
     // 2. Fetch owned avatars
     const { data: avatarsData } = await supabase
       .from("user_avatars")
