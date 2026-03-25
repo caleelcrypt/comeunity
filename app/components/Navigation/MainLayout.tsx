@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import BottomNav from './BottomNav';
-import SliderContainer from './SliderContainer';
 import FeedPage from '../../pages/Feed';
 import UnitiesPage from '../../pages/Unities';
 import MyProfilePage from '../../pages/MyProfile';
@@ -12,8 +11,8 @@ import styles from './MainLayout.module.css';
 export default function MainLayout() {
   const pathname = usePathname();
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
-  
+  const [currentPage, setCurrentPage] = useState(0);
+
   const getPageIndex = (path: string) => {
     if (path === '/feed') return 0;
     if (path === '/unities') return 1;
@@ -21,18 +20,9 @@ export default function MainLayout() {
     return 0;
   };
 
-  const [currentPage, setCurrentPage] = useState(0);
-
   useEffect(() => {
-    setIsClient(true);
     setCurrentPage(getPageIndex(pathname));
-  }, []);
-
-  useEffect(() => {
-    if (isClient) {
-      setCurrentPage(getPageIndex(pathname));
-    }
-  }, [pathname, isClient]);
+  }, [pathname]);
 
   const handlePageChange = (index: number) => {
     setCurrentPage(index);
@@ -53,28 +43,25 @@ export default function MainLayout() {
     );
   }
 
-  const pages = [
-    <FeedPage key="feed" />,
-    <UnitiesPage key="unities" />,
-    <MyProfilePage key="profile" />
-  ];
-
-  if (!isClient) {
-    return (
-      <div className={styles.phoneFrame}>
-        <SliderContainer currentPage={currentPage} onPageChange={handlePageChange}>
-          {pages}
-        </SliderContainer>
-        <BottomNav currentPage={currentPage} onPageChange={handlePageChange} />
-      </div>
-    );
-  }
+  // Simple page render - no slider
+  const renderPage = () => {
+    switch (currentPage) {
+      case 0:
+        return <FeedPage />;
+      case 1:
+        return <UnitiesPage />;
+      case 2:
+        return <MyProfilePage />;
+      default:
+        return <FeedPage />;
+    }
+  };
 
   return (
     <div className={styles.phoneFrame}>
-      <SliderContainer currentPage={currentPage} onPageChange={handlePageChange}>
-        {pages}
-      </SliderContainer>
+      <div className={styles.pageContainer}>
+        {renderPage()}
+      </div>
       <BottomNav currentPage={currentPage} onPageChange={handlePageChange} />
     </div>
   );

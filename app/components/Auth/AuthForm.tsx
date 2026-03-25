@@ -409,19 +409,30 @@ const AuthForm: React.FC = () => {
   }, []);
 
   const fetchUserProfile = async (authUser: any) => {
+  try {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", authUser.id)
       .single();
+    
     if (error) {
+      // If profile not found, it's okay - user just signed up
+      if (error.code === 'PGRST116') {
+        console.log("Profile not found yet, waiting for creation...");
+        return;
+      }
       console.error("Error fetching profile:", error);
       return;
     }
+    
     if (data) {
       setUser(data as UserProfile);
     }
-  };
+  } catch (err) {
+    console.error("Unexpected error fetching profile:", err);
+  }
+};
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {

@@ -22,21 +22,41 @@
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Global Reset */
+/* Global Reset - NO SLIDERS ALLOWED */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
 }
 
 body {
   font-family: 'Inter', sans-serif;
   background: linear-gradient(145deg, #0a0a12 0%, #030305 100%);
-  min-height: 100vh;
+  margin: 0;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Next.js root container */
+#__next {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
 }
 
 /* ==================== SHARED MODAL STYLES ==================== */
@@ -55,6 +75,7 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
+  overflow: hidden;
 }
 
 .modal.show {
@@ -72,6 +93,8 @@ body {
   transform: scale(0.95);
   transition: transform 0.3s ease;
   box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+  max-height: 80vh;
 }
 
 .modal.show .modal-content {
@@ -111,6 +134,7 @@ body {
   justify-content: center;
   gap: 12px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .star {
