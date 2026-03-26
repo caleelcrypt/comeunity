@@ -1,6 +1,13 @@
+﻿// app/components/profile/avatar-shop/AvatarShopModal2.tsx
 'use client';
-import React from 'react';
-import { ALL_AVATARS, tierConfig } from '../../../../lib/avatarData';
+import React, { useState } from 'react';
+import { 
+  ALL_AVATARS, 
+  tierConfig, 
+  getNextAffordableAvatar,
+  getCompletionPercentage,
+  Avatar 
+} from '../../../../lib/avatarData';
 
 interface AvatarShopModalProps {
   isOpen: boolean;
@@ -9,7 +16,7 @@ interface AvatarShopModalProps {
   currentAvatar: string;
   coins: number;
   onSelectAvatar: (emoji: string) => void;
-  onPurchase: (avatar: any) => void;
+  onPurchase: (avatar: Avatar) => void;
 }
 
 export default function AvatarShopModal({
@@ -21,11 +28,35 @@ export default function AvatarShopModal({
   onSelectAvatar,
   onPurchase
 }: AvatarShopModalProps) {
+  const [selectedTier, setSelectedTier] = useState<string>('all');
+  const [showOwnedOnly, setShowOwnedOnly] = useState(false);
+
+  const filteredAvatars = React.useMemo(() => {
+    let filtered = ALL_AVATARS;
+    
+    if (selectedTier !== 'all') {
+      filtered = filtered.filter(a => a.tier === selectedTier);
+    }
+    
+    if (showOwnedOnly) {
+      filtered = filtered.filter(a => ownedAvatars.includes(a.emoji));
+    }
+    
+    return filtered;
+  }, [selectedTier, showOwnedOnly, ownedAvatars]);
+
+  const ownedCount = ownedAvatars.length;
+  const totalCount = ALL_AVATARS.length;
+  const completionPercentage = (ownedCount / totalCount) * 100;
+  const nextAffordable = getNextAffordableAvatar(ownedAvatars, coins);
+
   if (!isOpen) return null;
 
-  const totalOwned = ownedAvatars.length;
-  const totalAvatars = ALL_AVATARS.length;
-  const progress = (totalOwned / totalAvatars) * 100;
+  // Helper to get tier color safely
+  const getTierColor = (tier: string): string => {
+    const config = tierConfig[tier as keyof typeof tierConfig];
+    return config?.color || '#6b7280';
+  };
 
   return (
     <div style={{
@@ -68,11 +99,11 @@ export default function AvatarShopModal({
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Coins</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#ffd700', fontSize: '24px', fontWeight: 'bold' }}>{totalOwned}/{totalAvatars}</div>
+            <div style={{ color: '#ffd700', fontSize: '24px', fontWeight: 'bold' }}>{ownedCount}/{totalCount}</div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Owned</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#ffd700', fontSize: '24px', fontWeight: 'bold' }}>{Math.round(progress)}%</div>
+            <div style={{ color: '#ffd700', fontSize: '24px', fontWeight: 'bold' }}>{Math.round(completionPercentage)}%</div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Complete</div>
           </div>
         </div>
@@ -80,13 +111,38 @@ export default function AvatarShopModal({
         {/* Progress Bar */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-            <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #ffd700, #ff4d6d)' }}></div>
+            <div style={{ width: `${completionPercentage}%`, height: '100%', background: 'linear-gradient(90deg, #ffd700, #ff4d6d)' }}></div>
           </div>
+        </div>
+
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setSelectedTier('all')}
+            style={{ padding: '8px 16px', background: selectedTier === 'all' ? '#ff4d6d' : '#2a2a3e', border: 'none', borderRadius: '20px', color: 'white', cursor: 'pointer' }}
+          >
+            All
+          </button>
+          {Object.keys(tierConfig).map(tier => (
+            <button 
+              key={tier}
+              onClick={() => setSelectedTier(tier)}
+              style={{ padding: '8px 16px', background: selectedTier === tier ? '#ff4d6d' : '#2a2a3e', border: 'none', borderRadius: '20px', color: 'white', cursor: 'pointer' }}
+            >
+              {tier}
+            </button>
+          ))}
+          <button 
+            onClick={() => setShowOwnedOnly(!showOwnedOnly)}
+            style={{ padding: '8px 16px', background: showOwnedOnly ? '#10b981' : '#2a2a3e', border: 'none', borderRadius: '20px', color: 'white', cursor: 'pointer' }}
+          >
+            {showOwnedOnly ? 'Showing Owned' : 'Show Owned'}
+          </button>
         </div>
         
         {/* Avatar Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
-          {ALL_AVATARS.map(avatar => {
+          {filteredAvatars.map(avatar => {
             const owned = ownedAvatars.includes(avatar.emoji);
             const isCurrent = currentAvatar === avatar.emoji;
             const canAfford = coins >= avatar.price;
@@ -107,6 +163,9 @@ export default function AvatarShopModal({
                   <div style={{ color: '#ffd700', fontSize: '11px', marginTop: '4px' }}>{avatar.price} 🪙</div>
                 ) : (
                   <div style={{ color: '#10b981', fontSize: '11px', marginTop: '4px' }}>FREE</div>
+                )}
+                {avatar.description && (
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', marginTop: '4px' }}>{avatar.description}</div>
                 )}
                 {owned ? (
                   <div style={{ color: isCurrent ? '#ff4d6d' : '#10b981', fontSize: '11px', marginTop: '8px' }}>

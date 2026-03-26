@@ -5,7 +5,7 @@ export interface Avatar {
   name: string;
   price: number;
   tier: string;
-  rarity: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'limited';
   description?: string;
 }
 

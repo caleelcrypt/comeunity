@@ -28,8 +28,8 @@ import ConfirmModal from '../components/profile/ConfirmModal';
 // Styles
 import styles from './MyProfile.module.css';
 
-// At the top of MyProfile.tsx
-import { FREE_AVATARS, PREMIUM_AVATARS, ALL_AVATARS, tierConfig } from '../../lib/avatarData';
+// Avatar imports
+import { FREE_AVATARS, ALL_AVATARS, tierConfig } from '../../lib/avatarData';
 
 // ============================================
 // TYPES
@@ -62,7 +62,8 @@ type Transaction = {
   id: string;
   type: string;
   amount: number;
-  created_at: string;
+  date: string;
+  created_at?: string;
 };
 
 type Post = {
@@ -94,13 +95,17 @@ type Achievement = {
   description: string;
   unlocked: boolean;
   category: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'secret';
+  xpReward?: number;
+  earnedAt?: string;
 };
 
+// Update your Follower type to include displayName
 type Follower = {
   id: string;
   username: string;
   avatar: string;
-  display_name: string;
+  displayName: string;  // ← ADD THIS (was display_name)
   is_following?: boolean;
   bio?: string;
   category?: string;
@@ -136,80 +141,70 @@ const getProgressToNextLevel = (currentXP: number): number => {
 };
 
 // ============================================
-// AVATAR DATA
+// ACHIEVEMENTS GENERATION
 // ============================================
 
-
-
-// Add this function to generate all achievements based on user data
-const generateAllAchievements = (profile: UserProfile, postsCount: number, avatarCount: number, referralInvites: number, tipsGiven: number, tipsReceived: number, unityContributions: number, reportsSubmitted: number) => {
+const generateAllAchievements = (profile: UserProfile | null, postsCount: number, avatarCount: number, referralInvites: number, tipsGiven: number, tipsReceived: number, unityContributions: number, reportsSubmitted: number): Achievement[] => {
   const xp = profile?.xp || 0;
   const streak = profile?.streak || 0;
   
   return [
     // XP & Level Badges
-    { id: 'rookie', name: 'Rookie', icon: '🌱', description: 'Sign up to ComeUnity', unlocked: true, category: 'level', rarity: 'common', xpReward: 0 },
-    { id: 'rising_star', name: 'Rising Star', icon: '⭐', description: 'Reach 100 XP', unlocked: xp >= 100, category: 'level', rarity: 'common', xpReward: 0 },
-    { id: 'explorer', name: 'Explorer', icon: '🗺️', description: 'Reach 500 XP', unlocked: xp >= 500, category: 'level', rarity: 'common', xpReward: 0 },
-    { id: 'adventurer', name: 'Adventurer', icon: '🧭', description: 'Reach 1,000 XP', unlocked: xp >= 1000, category: 'level', rarity: 'common', xpReward: 0 },
-    { id: 'master', name: 'Master', icon: '🏆', description: 'Reach 2,500 XP', unlocked: xp >= 2500, category: 'level', rarity: 'rare', xpReward: 0 },
-    { id: 'legend', name: 'Legend', icon: '👑', description: 'Reach 10,000 XP', unlocked: xp >= 10000, category: 'level', rarity: 'epic', xpReward: 0 },
-    { id: 'mythic', name: 'Mythic', icon: '🌟', description: 'Reach 25,000 XP', unlocked: xp >= 25000, category: 'level', rarity: 'legendary', xpReward: 0 },
-    { id: 'eternal', name: 'Eternal', icon: '♾️', description: 'Reach 50,000 XP', unlocked: xp >= 50000, category: 'level', rarity: 'mythic', xpReward: 0 },
-    { id: 'transcendent', name: 'Transcendent', icon: '🌌', description: 'Reach 100,000 XP', unlocked: xp >= 100000, category: 'level', rarity: 'mythic', xpReward: 0 },
+    { id: 'rookie', name: 'Rookie', icon: '🌱', description: 'Sign up to ComeUnity', unlocked: true, category: 'level', rarity: 'common' as const, xpReward: 0 },
+    { id: 'rising_star', name: 'Rising Star', icon: '⭐', description: 'Reach 100 XP', unlocked: xp >= 100, category: 'level', rarity: 'common' as const, xpReward: 0 },
+    { id: 'explorer', name: 'Explorer', icon: '🗺️', description: 'Reach 500 XP', unlocked: xp >= 500, category: 'level', rarity: 'common' as const, xpReward: 0 },
+    { id: 'adventurer', name: 'Adventurer', icon: '🧭', description: 'Reach 1,000 XP', unlocked: xp >= 1000, category: 'level', rarity: 'common' as const, xpReward: 0 },
+    { id: 'master', name: 'Master', icon: '🏆', description: 'Reach 2,500 XP', unlocked: xp >= 2500, category: 'level', rarity: 'rare' as const, xpReward: 0 },
+    { id: 'legend', name: 'Legend', icon: '👑', description: 'Reach 10,000 XP', unlocked: xp >= 10000, category: 'level', rarity: 'epic' as const, xpReward: 0 },
+    { id: 'mythic', name: 'Mythic', icon: '🌟', description: 'Reach 25,000 XP', unlocked: xp >= 25000, category: 'level', rarity: 'legendary' as const, xpReward: 0 },
+    { id: 'eternal', name: 'Eternal', icon: '♾️', description: 'Reach 50,000 XP', unlocked: xp >= 50000, category: 'level', rarity: 'mythic' as const, xpReward: 0 },
+    { id: 'transcendent', name: 'Transcendent', icon: '🌌', description: 'Reach 100,000 XP', unlocked: xp >= 100000, category: 'level', rarity: 'mythic' as const, xpReward: 0 },
     
     // Streak Badges
-    { id: 'first_step', name: 'First Step', icon: '👣', description: 'Maintain a 1-day streak', unlocked: streak >= 1, category: 'streak', rarity: 'common', xpReward: 10 },
-    { id: 'warming_up', name: 'Warming Up', icon: '🔥', description: 'Maintain a 3-day streak', unlocked: streak >= 3, category: 'streak', rarity: 'common', xpReward: 20 },
-    { id: 'on_fire', name: 'On Fire', icon: '⚡', description: 'Maintain a 5-day streak', unlocked: streak >= 5, category: 'streak', rarity: 'common', xpReward: 50 },
-    { id: 'week_warrior', name: 'Week Warrior', icon: '📅', description: 'Maintain a 7-day streak', unlocked: streak >= 7, category: 'streak', rarity: 'rare', xpReward: 100 },
-    { id: 'double_digits', name: 'Double Digits', icon: '🔟', description: 'Maintain a 10-day streak', unlocked: streak >= 10, category: 'streak', rarity: 'rare', xpReward: 150 },
-    { id: 'two_weeks', name: 'Two Weeks', icon: '✌️', description: 'Maintain a 14-day streak', unlocked: streak >= 14, category: 'streak', rarity: 'rare', xpReward: 200 },
-    { id: 'three_weeks', name: 'Three Weeks', icon: '🌟', description: 'Maintain a 21-day streak', unlocked: streak >= 21, category: 'streak', rarity: 'epic', xpReward: 250 },
-    { id: 'monthly_master', name: 'Monthly Master', icon: '🏆', description: 'Maintain a 30-day streak', unlocked: streak >= 30, category: 'streak', rarity: 'epic', xpReward: 500 },
-    { id: 'golden_streak', name: 'Golden Streak', icon: '👑', description: 'Maintain a 50-day streak', unlocked: streak >= 50, category: 'streak', rarity: 'legendary', xpReward: 750 },
-    { id: 'century_club', name: 'Century Club', icon: '🏅', description: 'Maintain a 100-day streak', unlocked: streak >= 100, category: 'streak', rarity: 'legendary', xpReward: 1500 },
-    { id: 'year_one', name: 'Year One', icon: '🎂', description: 'Maintain a 365-day streak', unlocked: streak >= 365, category: 'streak', rarity: 'mythic', xpReward: 5000 },
-    { id: 'eternal_flame', name: 'Eternal Flame', icon: '🔥♾️', description: 'Maintain a 500-day streak', unlocked: streak >= 500, category: 'streak', rarity: 'mythic', xpReward: 10000 },
-    { id: 'immortal', name: 'Immortal', icon: '🌟✨', description: 'Maintain a 1,000-day streak', unlocked: streak >= 1000, category: 'streak', rarity: 'secret', xpReward: 25000 },
+    { id: 'first_step', name: 'First Step', icon: '👣', description: 'Maintain a 1-day streak', unlocked: streak >= 1, category: 'streak', rarity: 'common' as const, xpReward: 10 },
+    { id: 'warming_up', name: 'Warming Up', icon: '🔥', description: 'Maintain a 3-day streak', unlocked: streak >= 3, category: 'streak', rarity: 'common' as const, xpReward: 20 },
+    { id: 'on_fire', name: 'On Fire', icon: '⚡', description: 'Maintain a 5-day streak', unlocked: streak >= 5, category: 'streak', rarity: 'common' as const, xpReward: 50 },
+    { id: 'week_warrior', name: 'Week Warrior', icon: '📅', description: 'Maintain a 7-day streak', unlocked: streak >= 7, category: 'streak', rarity: 'rare' as const, xpReward: 100 },
+    { id: 'double_digits', name: 'Double Digits', icon: '🔟', description: 'Maintain a 10-day streak', unlocked: streak >= 10, category: 'streak', rarity: 'rare' as const, xpReward: 150 },
+    { id: 'two_weeks', name: 'Two Weeks', icon: '✌️', description: 'Maintain a 14-day streak', unlocked: streak >= 14, category: 'streak', rarity: 'rare' as const, xpReward: 200 },
+    { id: 'three_weeks', name: 'Three Weeks', icon: '🌟', description: 'Maintain a 21-day streak', unlocked: streak >= 21, category: 'streak', rarity: 'epic' as const, xpReward: 250 },
+    { id: 'monthly_master', name: 'Monthly Master', icon: '🏆', description: 'Maintain a 30-day streak', unlocked: streak >= 30, category: 'streak', rarity: 'epic' as const, xpReward: 500 },
+    { id: 'golden_streak', name: 'Golden Streak', icon: '👑', description: 'Maintain a 50-day streak', unlocked: streak >= 50, category: 'streak', rarity: 'legendary' as const, xpReward: 750 },
+    { id: 'century_club', name: 'Century Club', icon: '🏅', description: 'Maintain a 100-day streak', unlocked: streak >= 100, category: 'streak', rarity: 'legendary' as const, xpReward: 1500 },
+    { id: 'year_one', name: 'Year One', icon: '🎂', description: 'Maintain a 365-day streak', unlocked: streak >= 365, category: 'streak', rarity: 'mythic' as const, xpReward: 5000 },
     
     // Creator Badges
-    { id: 'first_creation', name: 'First Creation', icon: '🎨', description: 'Create your first post', unlocked: postsCount >= 1, category: 'creator', rarity: 'common', xpReward: 0 },
-    { id: 'content_creator', name: 'Content Creator', icon: '✍️', description: 'Create 10 posts', unlocked: postsCount >= 10, category: 'creator', rarity: 'common', xpReward: 0 },
-    { id: 'prolific', name: 'Prolific', icon: '📝', description: 'Create 50 posts', unlocked: postsCount >= 50, category: 'creator', rarity: 'rare', xpReward: 0 },
-    { id: 'dedicated', name: 'Dedicated', icon: '🎯', description: 'Create 100 posts', unlocked: postsCount >= 100, category: 'creator', rarity: 'rare', xpReward: 0 },
-    { id: 'obsessed', name: 'Obsessed', icon: '🔥', description: 'Create 500 posts', unlocked: postsCount >= 500, category: 'creator', rarity: 'epic', xpReward: 0 },
-    { id: 'legendary_creator', name: 'Legendary Creator', icon: '👑', description: 'Create 1,000 posts', unlocked: postsCount >= 1000, category: 'creator', rarity: 'legendary', xpReward: 0 },
+    { id: 'first_creation', name: 'First Creation', icon: '🎨', description: 'Create your first post', unlocked: postsCount >= 1, category: 'creator', rarity: 'common' as const, xpReward: 0 },
+    { id: 'content_creator', name: 'Content Creator', icon: '✍️', description: 'Create 10 posts', unlocked: postsCount >= 10, category: 'creator', rarity: 'common' as const, xpReward: 0 },
+    { id: 'prolific', name: 'Prolific', icon: '📝', description: 'Create 50 posts', unlocked: postsCount >= 50, category: 'creator', rarity: 'rare' as const, xpReward: 0 },
+    { id: 'dedicated', name: 'Dedicated', icon: '🎯', description: 'Create 100 posts', unlocked: postsCount >= 100, category: 'creator', rarity: 'rare' as const, xpReward: 0 },
+    { id: 'obsessed', name: 'Obsessed', icon: '🔥', description: 'Create 500 posts', unlocked: postsCount >= 500, category: 'creator', rarity: 'epic' as const, xpReward: 0 },
+    { id: 'legendary_creator', name: 'Legendary Creator', icon: '👑', description: 'Create 1,000 posts', unlocked: postsCount >= 1000, category: 'creator', rarity: 'legendary' as const, xpReward: 0 },
     
     // Collector Badges
-    { id: 'new_collector', name: 'New Collector', icon: '🛍️', description: 'Buy your first avatar', unlocked: avatarCount >= 1, category: 'collector', rarity: 'common', xpReward: 0 },
-    { id: 'avid_collector', name: 'Avid Collector', icon: '🌟', description: 'Own 5 avatars', unlocked: avatarCount >= 5, category: 'collector', rarity: 'rare', xpReward: 0 },
-    { id: 'serious_collector', name: 'Serious Collector', icon: '💎', description: 'Own 10 avatars', unlocked: avatarCount >= 10, category: 'collector', rarity: 'rare', xpReward: 0 },
-    { id: 'master_collector', name: 'Master Collector', icon: '🏆', description: 'Own 20 avatars', unlocked: avatarCount >= 20, category: 'collector', rarity: 'epic', xpReward: 0 },
+    { id: 'new_collector', name: 'New Collector', icon: '🛍️', description: 'Buy your first avatar', unlocked: avatarCount >= 1, category: 'collector', rarity: 'common' as const, xpReward: 0 },
+    { id: 'avid_collector', name: 'Avid Collector', icon: '🌟', description: 'Own 5 avatars', unlocked: avatarCount >= 5, category: 'collector', rarity: 'rare' as const, xpReward: 0 },
+    { id: 'serious_collector', name: 'Serious Collector', icon: '💎', description: 'Own 10 avatars', unlocked: avatarCount >= 10, category: 'collector', rarity: 'rare' as const, xpReward: 0 },
+    { id: 'master_collector', name: 'Master Collector', icon: '🏆', description: 'Own 20 avatars', unlocked: avatarCount >= 20, category: 'collector', rarity: 'epic' as const, xpReward: 0 },
     
     // Referral Badges
-    { id: 'first_invite', name: 'First Invite', icon: '🤝', description: 'Invite your first friend', unlocked: referralInvites >= 1, category: 'community', rarity: 'common', xpReward: 50 },
-    { id: 'popular', name: 'Popular', icon: '🌟', description: 'Invite 5 friends', unlocked: referralInvites >= 5, category: 'community', rarity: 'rare', xpReward: 250 },
-    { id: 'influencer', name: 'Influencer', icon: '👑', description: 'Invite 10 friends', unlocked: referralInvites >= 10, category: 'community', rarity: 'epic', xpReward: 500 },
-    { id: 'referral_king', name: 'Referral King', icon: '👑', description: 'Invite 100 friends', unlocked: referralInvites >= 100, category: 'community', rarity: 'legendary', xpReward: 5000 },
-    { id: 'referral_god', name: 'Referral God', icon: '🌟', description: 'Invite 500 friends', unlocked: referralInvites >= 500, category: 'community', rarity: 'mythic', xpReward: 25000 },
+    { id: 'first_invite', name: 'First Invite', icon: '🤝', description: 'Invite your first friend', unlocked: referralInvites >= 1, category: 'community', rarity: 'common' as const, xpReward: 50 },
+    { id: 'popular', name: 'Popular', icon: '🌟', description: 'Invite 5 friends', unlocked: referralInvites >= 5, category: 'community', rarity: 'rare' as const, xpReward: 250 },
+    { id: 'influencer', name: 'Influencer', icon: '👑', description: 'Invite 10 friends', unlocked: referralInvites >= 10, category: 'community', rarity: 'epic' as const, xpReward: 500 },
+    { id: 'referral_king', name: 'Referral King', icon: '👑', description: 'Invite 100 friends', unlocked: referralInvites >= 100, category: 'community', rarity: 'legendary' as const, xpReward: 5000 },
+    { id: 'referral_god', name: 'Referral God', icon: '🌟', description: 'Invite 500 friends', unlocked: referralInvites >= 500, category: 'community', rarity: 'mythic' as const, xpReward: 25000 },
     
     // Generosity Badges
-    { id: 'first_tip', name: 'First Tip', icon: '🎁', description: 'Send your first tip', unlocked: tipsGiven >= 1, category: 'generosity', rarity: 'common', xpReward: 0 },
-    { id: 'generous_heart', name: 'Generous Heart', icon: '❤️', description: 'Send 10 tips', unlocked: tipsGiven >= 10, category: 'generosity', rarity: 'common', xpReward: 0 },
-    { id: 'supporter', name: 'Supporter', icon: '🤝', description: 'Send 50 tips', unlocked: tipsGiven >= 50, category: 'generosity', rarity: 'rare', xpReward: 0 },
-    { id: 'super_fan', name: 'Super Fan', icon: '⭐', description: 'Send 100 tips', unlocked: tipsGiven >= 100, category: 'generosity', rarity: 'rare', xpReward: 0 },
-    { id: 'patron', name: 'Patron', icon: '👑', description: 'Send 500 tips', unlocked: tipsGiven >= 500, category: 'generosity', rarity: 'epic', xpReward: 0 },
-    { id: 'angel', name: 'Angel', icon: '😇', description: 'Send 1,000 tips', unlocked: tipsGiven >= 1000, category: 'generosity', rarity: 'legendary', xpReward: 0 },
-    { id: 'first_tip_received', name: 'First Tip Received', icon: '🎉', description: 'Receive your first tip', unlocked: tipsReceived >= 1, category: 'generosity', rarity: 'common', xpReward: 0 },
-    { id: 'appreciated', name: 'Appreciated', icon: '🙏', description: 'Receive 10 tips', unlocked: tipsReceived >= 10, category: 'generosity', rarity: 'rare', xpReward: 0 },
-    { id: 'beloved', name: 'Beloved', icon: '💝', description: 'Receive 100 tips', unlocked: tipsReceived >= 100, category: 'generosity', rarity: 'epic', xpReward: 0 },
-    { id: 'community_star', name: 'Community Star', icon: '⭐', description: 'Receive 1,000 tips', unlocked: tipsReceived >= 1000, category: 'generosity', rarity: 'legendary', xpReward: 0 },
-    { id: 'whale', name: 'Whale', icon: '🐋', description: 'Give 10,000 total coins', unlocked: tipsGiven >= 10000, category: 'generosity', rarity: 'legendary', xpReward: 0 },
-    { id: 'mega_whale', name: 'Mega Whale', icon: '🐋👑', description: 'Give 50,000 total coins', unlocked: tipsGiven >= 50000, category: 'generosity', rarity: 'mythic', xpReward: 0 },
-    { id: 'ocean_lord', name: 'Ocean Lord', icon: '🌊👑', description: 'Give 100,000 total coins', unlocked: tipsGiven >= 100000, category: 'generosity', rarity: 'secret', xpReward: 0 },
+    { id: 'first_tip', name: 'First Tip', icon: '🎁', description: 'Send your first tip', unlocked: tipsGiven >= 1, category: 'generosity', rarity: 'common' as const, xpReward: 0 },
+    { id: 'generous_heart', name: 'Generous Heart', icon: '❤️', description: 'Send 10 tips', unlocked: tipsGiven >= 10, category: 'generosity', rarity: 'common' as const, xpReward: 0 },
+    { id: 'supporter', name: 'Supporter', icon: '🤝', description: 'Send 50 tips', unlocked: tipsGiven >= 50, category: 'generosity', rarity: 'rare' as const, xpReward: 0 },
+    { id: 'super_fan', name: 'Super Fan', icon: '⭐', description: 'Send 100 tips', unlocked: tipsGiven >= 100, category: 'generosity', rarity: 'rare' as const, xpReward: 0 },
+    { id: 'patron', name: 'Patron', icon: '👑', description: 'Send 500 tips', unlocked: tipsGiven >= 500, category: 'generosity', rarity: 'epic' as const, xpReward: 0 },
+    { id: 'angel', name: 'Angel', icon: '😇', description: 'Send 1,000 tips', unlocked: tipsGiven >= 1000, category: 'generosity', rarity: 'legendary' as const, xpReward: 0 },
+    { id: 'whale', name: 'Whale', icon: '🐋', description: 'Give 10,000 total coins', unlocked: tipsGiven >= 10000, category: 'generosity', rarity: 'legendary' as const, xpReward: 0 },
   ];
 };
+
 // ============================================
 // MAIN COMPONENT
 // ============================================
@@ -217,7 +212,7 @@ const generateAllAchievements = (profile: UserProfile, postsCount: number, avata
 export default function MyProfilePage() {
   const router = useRouter();
   
-  // ALL useState hooks MUST be inside the component function
+  // State variables
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState<string | null>(null);
@@ -227,19 +222,17 @@ export default function MyProfilePage() {
   const [unities, setUnities] = useState<Unity[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [ownedAvatars, setOwnedAvatars] = useState<string[]>([]);
-  const [currentAvatar, setCurrentAvatar] = useState('😎');  // ← ADD THIS LINE
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [currentAvatar, setCurrentAvatar] = useState('😎');
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [following, setFollowing] = useState<Follower[]>([]);
+  const [badges, setBadges] = useState<Achievement[]>([]);
+  const [badgeStats, setBadgeStats] = useState<any>(null);
   
-  
-  // ... rest of your state
-  // ... rest of your state
-  // Inside the component, with your other state variables
-const [tipsGiven, setTipsGiven] = useState(0);
-const [tipsReceived, setTipsReceived] = useState(0);
-const [unityContributions, setUnityContributions] = useState(0);
-const [reportsSubmitted, setReportsSubmitted] = useState(0);
+  // Tip states
+  const [tipsGiven, setTipsGiven] = useState(0);
+  const [tipsReceived, setTipsReceived] = useState(0);
+  const [unityContributions, setUnityContributions] = useState(0);
+  const [reportsSubmitted, setReportsSubmitted] = useState(0);
   
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -257,10 +250,7 @@ const [reportsSubmitted, setReportsSubmitted] = useState(0);
   // Tab state
   const [activeTab, setActiveTab] = useState<'posts' | 'unities' | 'treasure'>('posts');
   
-  // ============================================
-  // REFERRAL STATE - ADD THIS SECTION
-  // ============================================
-  
+  // Referral state
   const [referralInvites, setReferralInvites] = useState(0);
   const [referralXPEarned, setReferralXPEarned] = useState(0);
   const [referralCode, setReferralCode] = useState('');
@@ -270,138 +260,98 @@ const [reportsSubmitted, setReportsSubmitted] = useState(0);
   // FOLLOWERS FUNCTIONS
   // ============================================
   
-  const fetchFollowers = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/users/followers?userId=${userId}&limit=100&sortBy=recent`);
-      if (response.ok) {
-        const data = await response.json();
-        setFollowers(data.map((user: any) => ({
-          id: user.id,
-          username: user.username,
-          avatar: user.avatar || user.display_name?.charAt(0) || '👤',
-          display_name: user.display_name,
-          is_following: user.is_following,
-          bio: user.bio,
-          category: user.category,
-          followers_count: user.followers_count,
-          following_count: user.following_count
-        })));
-      }
-    } catch (error) {
-      console.error('Error fetching followers:', error);
+ const fetchFollowers = async (userId: string) => {
+  try {
+    const response = await fetch(`/api/users/followers?userId=${userId}&limit=100&sortBy=recent`);
+    if (response.ok) {
+      const data = await response.json();
+      setFollowers(data.map((user: any) => ({
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar || user.display_name?.charAt(0) || '👤',
+        displayName: user.display_name,  // ← CHANGE THIS (was display_name)
+        is_following: user.is_following,
+        bio: user.bio,
+        category: user.category,
+        followers_count: user.followers_count,
+        following_count: user.following_count
+      })));
     }
-  };
-  
-  const fetchFollowing = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/users/following?userId=${userId}&limit=100&sortBy=recent`);
-      if (response.ok) {
-        const data = await response.json();
-        setFollowing(data.map((user: any) => ({
-          id: user.id,
-          username: user.username,
-          avatar: user.avatar || user.display_name?.charAt(0) || '👤',
-          display_name: user.display_name,
-          is_following: true,
-          bio: user.bio,
-          category: user.category,
-          followers_count: user.followers_count,
-          following_count: user.following_count
-        })));
-      }
-    } catch (error) {
-      console.error('Error fetching following:', error);
-    }
-  };
+  } catch (error) {
+    console.error('Error fetching followers:', error);
+  }
+};
 
-  // Fetch badges from database
-const fetchBadges = async () => {
-  if (!profile) return;
-  
+const fetchFollowing = async (userId: string) => {
   try {
-    const response = await fetch(`/api/users/badges?userId=${profile.id}`);
-    const data = await response.json();
-    
-    if (data.success) {
-      setBadges(data.badges);
-      setBadgeStats(data.stats);
-    } else {
-      // Fallback to generated achievements if API fails
-      const generatedAchievements = generateAllAchievements(
-        profile,
-        posts.length,
-        ownedAvatars.length,
-        referralInvites,
-        0, // tipsGiven
-        0, // tipsReceived
-        unities.length,
-        0  // reportsSubmitted
-      );
-      setBadges(generatedAchievements);
+    const response = await fetch(`/api/users/following?userId=${userId}&limit=100&sortBy=recent`);
+    if (response.ok) {
+      const data = await response.json();
+      setFollowing(data.map((user: any) => ({
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar || user.display_name?.charAt(0) || '👤',
+        displayName: user.display_name,  // ← CHANGE THIS (was display_name)
+        is_following: true,
+        bio: user.bio,
+        category: user.category,
+        followers_count: user.followers_count,
+        following_count: user.following_count
+      })));
     }
   } catch (error) {
-    console.error('Error fetching badges:', error);
-    // Fallback to generated achievements
-    const generatedAchievements = generateAllAchievements(
-      profile,
-      posts.length,
-      ownedAvatars.length,
-      referralInvites,
-      0,
-      0,
-      unities.length,
-      0
-    );
-    setBadges(generatedAchievements);
+    console.error('Error fetching following:', error);
   }
 };
-  
-  // Add this function to fetch tips data
-const fetchTipsData = async (userId: string) => {
-  try {
-    // Get tips given (transactions with type 'Sent Tip')
-    const { data: givenData, error: givenError } = await supabase
-      .from('transactions')
-      .select('amount')
-      .eq('user_id', userId)
-      .eq('type', 'Sent Tip');
-    
-    if (!givenError && givenData) {
-      const totalGiven = givenData.reduce((sum, t) => sum + t.amount, 0);
-      setTipsGiven(totalGiven);
+  const fetchBadges = async () => {
+    if (!profile) return;
+    try {
+      const response = await fetch(`/api/users/badges?userId=${profile.id}`);
+      const data = await response.json();
+      if (data.success && data.badges) {
+        setBadges(data.badges);
+        setBadgeStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching badges:', error);
     }
-    
-    // Get tips received (transactions where user is the recipient)
-    // This requires a different query structure - you'll need to adapt based on your schema
-    // For now, we'll leave it as 0
-  } catch (error) {
-    console.error('Error fetching tips data:', error);
-  }
-};
+  };
+  
+  const fetchTipsData = async (userId: string) => {
+    try {
+      const { data: givenData, error: givenError } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('type', 'Sent Tip');
+      
+      if (!givenError && givenData) {
+        const totalGiven = givenData.reduce((sum, t) => sum + t.amount, 0);
+        setTipsGiven(totalGiven);
+      }
+    } catch (error) {
+      console.error('Error fetching tips data:', error);
+    }
+  };
+  
   // ============================================
-  // REFERRAL FUNCTIONS - ADD THIS SECTION
+  // REFERRAL FUNCTIONS
   // ============================================
   
- const fetchReferralStats = async () => {
-  try {
-    console.log('🟢 Fetching referral stats...');
-    const response = await fetch('/api/users/referral');
-    const data = await response.json();
-    console.log('🟢 Referral API response:', data);
-    
-    if (data.success) {
-      console.log('🟢 Setting referral code to:', data.data.referral_code);
-      setReferralInvites(data.data.total_invites);
-      setReferralXPEarned(data.data.total_xp_earned);
-      setReferralCode(data.data.referral_code);
-      setReferralStats(data.data);
-    } else {
-      console.log('🔴 Referral API error:', data.error);
+  const fetchReferralStats = async () => {
+    try {
+      const response = await fetch('/api/users/referral');
+      const data = await response.json();
+      if (data.success) {
+        setReferralInvites(data.data.total_invites);
+        setReferralXPEarned(data.data.total_xp_earned);
+        setReferralCode(data.data.referral_code);
+        setReferralStats(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching referral stats:', error);
     }
-  } catch (error) {
-    console.error('🔴 Error fetching referral stats:', error);
-  }
-};
+  };
   
   const handleCopyReferralCode = () => {
     if (referralCode) {
@@ -439,26 +389,17 @@ const fetchTipsData = async (userId: string) => {
   
   const handleFollowUser = async (userId: string) => {
     if (!profile) return;
-    
     try {
       const response = await fetch('/api/users/follow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })
       });
-      
       const data = await response.json();
-      
       if (response.ok && data.success) {
         await fetchProfileData();
-        
-        if (showFollowersModal) {
-          await fetchFollowers(profile.id);
-        }
-        if (showFollowingModal) {
-          await fetchFollowing(profile.id);
-        }
-        
+        if (showFollowersModal) await fetchFollowers(profile.id);
+        if (showFollowingModal) await fetchFollowing(profile.id);
         showToastMessage(`✅ Now following user!`);
       } else {
         showToastMessage(`❌ ${data.error || 'Failed to follow user'}`);
@@ -471,26 +412,17 @@ const fetchTipsData = async (userId: string) => {
   
   const handleUnfollowUser = async (userId: string) => {
     if (!profile) return;
-    
     try {
       const response = await fetch('/api/users/unfollow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })
       });
-      
       const data = await response.json();
-      
       if (response.ok && data.success) {
         await fetchProfileData();
-        
-        if (showFollowersModal) {
-          await fetchFollowers(profile.id);
-        }
-        if (showFollowingModal) {
-          await fetchFollowing(profile.id);
-        }
-        
+        if (showFollowersModal) await fetchFollowers(profile.id);
+        if (showFollowingModal) await fetchFollowing(profile.id);
         showToastMessage(`✅ Unfollowed user`);
       } else {
         showToastMessage(`❌ ${data.error || 'Failed to unfollow user'}`);
@@ -506,68 +438,41 @@ const fetchTipsData = async (userId: string) => {
   // ============================================
   
   const fetchProfileData = async () => {
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  
-  if (!authUser) {
-    router.push('/auth');
-    return null;
-  }
-  
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", authUser.id)
-    .single();
-  
-  if (profileData) {
-    setProfile(profileData);
-    setCurrentAvatar(profileData.avatar || '😎');  // ← ADD THIS
-  }
-  
-  return profileData;
-};
-  
- const fetchAllData = async () => {
-  setLoading(true);
-  
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  
-  if (!authUser) {
-    router.push('/auth');
-    return;
-  }
-  // After fetching transactions, add:
-await fetchTipsData(authUser.id);
-  // 1. Fetch profile
-  const profileData = await fetchProfileData();
-
-  // Inside fetchAllData, after setting profile and other data
-// 8. Fetch badges
-await fetchBadges();
-  // ============================================
-  // ADD THE REFERRAL CODE HERE - RIGHT AFTER FETCHING PROFILE
-  // ============================================
-  if (profileData) {
-    console.log('🟢 Profile data:', profileData);
-    
-    // Get referral code directly from profile
-    if (profileData.own_referral_code) {
-      console.log('🟢 Setting referral code from profile:', profileData.own_referral_code);
-      setReferralCode(profileData.own_referral_code);
-      setReferralInvites(profileData.referral_invites || 0);
-      setReferralXPEarned(profileData.referral_xp_earned || 0);
-    } else {
-      console.log('🔴 No referral code found in profile');
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+      router.push('/auth');
+      return null;
     }
-  }
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", authUser.id)
+      .single();
+    if (profileData) {
+      setProfile(profileData);
+      setCurrentAvatar(profileData.avatar || '😎');
+    }
+    return profileData;
+  };
   
-  // 2. Fetch owned avatars
-  const { data: avatarsData } = await supabase
-    .from("user_avatars")
-    .select("avatar_emoji")
-    .eq("user_id", authUser.id);
-  
-  // ... rest of your code continues
+  const fetchAllData = async () => {
+    setLoading(true);
+    
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+      router.push('/auth');
+      return;
+    }
+    
+    // 1. Fetch profile
+    const profileData = await fetchProfileData();
+    
+    // 2. Fetch owned avatars
+    const { data: avatarsData } = await supabase
+      .from("user_avatars")
+      .select("avatar_emoji")
+      .eq("user_id", authUser.id);
+    
     if (avatarsData && avatarsData.length > 0) {
       setOwnedAvatars(avatarsData.map(a => a.avatar_emoji));
     } else {
@@ -580,17 +485,13 @@ await fetchBadges();
       .select("*")
       .eq("user_id", authUser.id)
       .order("created_at", { ascending: false });
-    
-    if (postsData) {
-      setPosts(postsData);
-    }
+    if (postsData) setPosts(postsData);
     
     // 4. Fetch unities
     const { data: unitiesData } = await supabase
       .from("user_unities")
       .select("*")
       .eq("user_id", authUser.id);
-    
     if (unitiesData) {
       const formattedUnities = unitiesData.map(u => ({
         ...u,
@@ -608,9 +509,16 @@ await fetchBadges();
       .order("created_at", { ascending: false })
       .limit(20);
     
-    setTransactions(transactionsData || []);
+    if (transactionsData) {
+      setTransactions(transactionsData.map(t => ({
+        ...t,
+        date: t.created_at || new Date().toISOString()
+      })));
+    } else {
+      setTransactions([]);
+    }
     
-    // 6. Fetch followers and following from API
+    // 6. Fetch followers and following
     if (authUser.id) {
       await Promise.all([
         fetchFollowers(authUser.id),
@@ -618,33 +526,39 @@ await fetchBadges();
       ]);
     }
     
-    // 7. Fetch referral stats - ADD THIS
+    // 7. Fetch referral stats
     await fetchReferralStats();
     
-    // 8. Calculate achievements
-    const xp = profileData?.xp || 0;
-    const streak = profileData?.streak || 0;
-    const postsCount = postsData?.length || 0;
-    const avatarCount = avatarsData?.length || 1;
+    // 8. Fetch tips data
+    await fetchTipsData(authUser.id);
     
-    // 7. Calculate achievements using the new system
-const tipsGiven = 0; // You'll need to fetch this from your transactions table
-const tipsReceived = 0; // You'll need to fetch this from your transactions table
-const unityContributions = unitiesData?.length || 0;
-const reportsSubmitted = 0; // You'll need to fetch this from your reports table
-
-const allAchievements = generateAllAchievements(
-  profileData,
-  postsData?.length || 0,
-  avatarsData?.length || 1,
-  referralInvites,
-  tipsGiven,
-  tipsReceived,
-  unityContributions,
-  reportsSubmitted
-);
-
-setAchievements(allAchievements);
+    // 9. Fetch badges
+    await fetchBadges();
+    
+    // 10. Set referral code from profile
+    if (profileData && profileData.own_referral_code) {
+      setReferralCode(profileData.own_referral_code);
+      setReferralInvites(profileData.referral_invites || 0);
+      setReferralXPEarned(profileData.referral_xp_earned || 0);
+    }
+    
+    // 11. Generate achievements as fallback
+    const allAchievements = generateAllAchievements(
+      profileData,
+      postsData?.length || 0,
+      avatarsData?.length || 1,
+      referralInvites,
+      tipsGiven,
+      tipsReceived,
+      unitiesData?.length || 0,
+      reportsSubmitted
+    );
+    
+    // 12. Only use fallback if badges array is empty
+    if (badges.length === 0) {
+      setBadges(allAchievements);
+    }
+    
     setLoading(false);
   };
   
@@ -654,23 +568,17 @@ setAchievements(allAchievements);
   
   const earnXP = async (amount: number, reason: string) => {
     if (!profile) return;
-    
     const newXP = profile.xp + amount;
-    
     await supabase
       .from("profiles")
       .update({ xp: newXP })
       .eq("id", profile.id);
-    
     setProfile({ ...profile, xp: newXP });
-    
     const oldLevel = calculateLevel(profile.xp);
     const newLevel = calculateLevel(newXP);
-    
     if (newLevel > oldLevel) {
       showToastMessage(`🎉 LEVEL UP! You're now Level ${newLevel} ${getLevelTitle(newLevel)}! 🎉`);
     }
-    
     return newXP;
   };
   
@@ -683,20 +591,15 @@ setAchievements(allAchievements);
     setTimeout(() => setShowToast(null), 2500);
   };
   
-  const handleEditProfile = () => {
-    setShowEditModal(true);
-  };
+  const handleEditProfile = () => setShowEditModal(true);
   
   const handleSaveProfile = async (data: {
     first_name: string;
     last_name: string;
     bio: string;
     category: string;
-    website: string;
-    location: string;
   }) => {
     if (!profile) return;
-    
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -705,11 +608,8 @@ setAchievements(allAchievements);
         full_name: `${data.first_name} ${data.last_name}`,
         bio: data.bio,
         category: data.category,
-        website: data.website,
-        location: data.location
       })
       .eq("id", profile.id);
-    
     if (!error) {
       setProfile({
         ...profile,
@@ -718,8 +618,6 @@ setAchievements(allAchievements);
         full_name: `${data.first_name} ${data.last_name}`,
         bio: data.bio,
         category: data.category,
-        website: data.website,
-        location: data.location
       });
       showToastMessage('✅ Profile updated!');
     } else {
@@ -732,9 +630,7 @@ setAchievements(allAchievements);
     showToastMessage('Profile link copied!');
   };
   
-  const handleOpenAvatarShop = () => {
-    setShowAvatarShop(true);
-  };
+  const handleOpenAvatarShop = () => setShowAvatarShop(true);
   
   const handleSelectAvatar = async (emoji: string) => {
   if (!profile) return;
@@ -752,7 +648,6 @@ setAchievements(allAchievements);
     showToastMessage("You don't own this avatar yet!");
   }
 };
-  
   const handlePurchaseAvatar = (avatar: { emoji: string; price: number; name: string }) => {
     if (ownedAvatars.includes(avatar.emoji)) {
       handleSelectAvatar(avatar.emoji);
@@ -764,7 +659,6 @@ setAchievements(allAchievements);
   
   const handleConfirmPurchase = async () => {
     if (!profile || !pendingPurchase) return;
-    
     if (profile.coins >= pendingPurchase.price) {
       const newCoins = profile.coins - pendingPurchase.price;
       
@@ -785,22 +679,18 @@ setAchievements(allAchievements);
           amount: pendingPurchase.price
         });
       
-      setProfile({
-        ...profile,
-        coins: newCoins
-      });
+      setProfile({ ...profile, coins: newCoins });
       setOwnedAvatars([...ownedAvatars, pendingPurchase.emoji]);
       setCurrentAvatar(pendingPurchase.emoji);
       
-      setTransactions([
-        {
-          id: Date.now().toString(),
-          type: `Avatar Purchase: ${pendingPurchase.name}`,
-          amount: pendingPurchase.price,
-          created_at: new Date().toISOString()
-        },
-        ...transactions
-      ]);
+      const newTransaction = {
+        id: Date.now().toString(),
+        type: `Avatar Purchase: ${pendingPurchase.name}`,
+        amount: pendingPurchase.price,
+        date: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+      setTransactions([newTransaction, ...transactions]);
       
       await earnXP(Math.floor(pendingPurchase.price / 10), `Purchased ${pendingPurchase.name} avatar`);
       
@@ -813,46 +703,28 @@ setAchievements(allAchievements);
     setPendingPurchase(null);
   };
   
-  const handleOpenLevelModal = () => {
-    setShowLevelModal(true);
-  };
-  
-  const handleOpenStreakModal = () => {
-    setShowStreakModal(true);
-  };
-  
+  const handleOpenLevelModal = () => setShowLevelModal(true);
+  const handleOpenStreakModal = () => setShowStreakModal(true);
   const handleOpenAchievementsModal = () => {
-  fetchBadges(); // Refresh badges before opening
-  setShowAchievementsModal(true);
-};
-  
-  const handleOpenTransactionModal = () => {
-    setShowTransactionModal(true);
+    fetchBadges();
+    setShowAchievementsModal(true);
   };
-  
+  const handleOpenTransactionModal = () => setShowTransactionModal(true);
   const handleOpenFollowersModal = () => {
-    if (profile) {
-      fetchFollowers(profile.id);
-    }
+    if (profile) fetchFollowers(profile.id);
     setShowFollowersModal(true);
   };
-  
   const handleOpenFollowingModal = () => {
-    if (profile) {
-      fetchFollowing(profile.id);
-    }
+    if (profile) fetchFollowing(profile.id);
     setShowFollowingModal(true);
   };
-  
   const handleOpenReferralModal = () => {
-    // Refresh referral stats before opening - ADD THIS
     fetchReferralStats();
     setShowReferralModal(true);
   };
   
   const handleLikePost = async (postId: string) => {
     if (!profile) return;
-    
     const post = posts.find(p => p.id === postId);
     if (!post) return;
     
@@ -862,12 +734,10 @@ setAchievements(allAchievements);
         .delete()
         .eq("user_id", profile.id)
         .eq("post_id", postId);
-      
       await supabase
         .from("posts")
         .update({ likes_count: post.likes_count - 1 })
         .eq("id", postId);
-      
       setPosts(posts.map(p => 
         p.id === postId ? { ...p, likes_count: p.likes_count - 1, liked_by_user: false } : p
       ));
@@ -875,16 +745,13 @@ setAchievements(allAchievements);
       await supabase
         .from("likes")
         .insert({ user_id: profile.id, post_id: postId });
-      
       await supabase
         .from("posts")
         .update({ likes_count: post.likes_count + 1 })
         .eq("id", postId);
-      
       setPosts(posts.map(p => 
         p.id === postId ? { ...p, likes_count: p.likes_count + 1, liked_by_user: true } : p
       ));
-      
       await earnXP(5, `Liked a post`);
       showToastMessage(`❤️ Liked post! +5 XP`);
     }
@@ -892,21 +759,17 @@ setAchievements(allAchievements);
   
   const handleTipPost = async (postId: string, postUserId: string) => {
     if (!profile) return;
-    
     const tipAmount = 20;
     if (profile.coins >= tipAmount) {
       const newCoins = profile.coins - tipAmount;
-      
       await supabase
         .from("profiles")
         .update({ coins: newCoins })
         .eq("id", profile.id);
-      
       await supabase
         .from("profiles")
         .update({ coins: profile.coins + tipAmount })
         .eq("id", postUserId);
-      
       await supabase
         .from("transactions")
         .insert({
@@ -914,18 +777,15 @@ setAchievements(allAchievements);
           type: 'Sent Tip',
           amount: tipAmount
         });
-      
       setProfile({ ...profile, coins: newCoins });
-      setTransactions([
-        {
-          id: Date.now().toString(),
-          type: 'Sent Tip',
-          amount: tipAmount,
-          created_at: new Date().toISOString()
-        },
-        ...transactions
-      ]);
-      
+      const newTransaction = {
+        id: Date.now().toString(),
+        type: 'Sent Tip',
+        amount: tipAmount,
+        date: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+      setTransactions([newTransaction, ...transactions]);
       await earnXP(10, `Tipped a post`);
       showToastMessage(`💎 Tipped ${tipAmount} coins! +10 XP`);
     } else {
@@ -933,13 +793,8 @@ setAchievements(allAchievements);
     }
   };
   
-  const handleCreatePost = () => {
-    router.push('/create');
-  };
-  
-  const handleDiscoverUnities = () => {
-    router.push('/discover');
-  };
+  const handleCreatePost = () => router.push('/create');
+  const handleDiscoverUnities = () => router.push('/discover');
   
   // ============================================
   // EFFECTS
@@ -958,7 +813,6 @@ setAchievements(allAchievements);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
-    
     if (hours < 1) return 'Just now';
     if (hours < 24) return `${hours}h ago`;
     return `${Math.floor(hours / 24)}d ago`;
@@ -1005,7 +859,6 @@ setAchievements(allAchievements);
           </header>
           
           <main className={styles.mainContent}>
-            {/* Profile Header */}
             <ProfileHeader
               avatar={currentAvatar}
               firstName={profile?.first_name || ''}
@@ -1019,7 +872,6 @@ setAchievements(allAchievements);
               onShareProfile={handleShareProfile}
             />
             
-            {/* Profile Stats */}
             <ProfileStats
               followers={profile?.followers_count || 0}
               following={profile?.following_count || 0}
@@ -1027,9 +879,6 @@ setAchievements(allAchievements);
               onFollowingClick={handleOpenFollowingModal}
             />
             
-            
-
-            {/* Level & Streak Card */}
             <LevelCard
               level={level}
               levelTitle={levelTitle}
@@ -1042,19 +891,16 @@ setAchievements(allAchievements);
               onReferralClick={handleOpenReferralModal}
             />
             
-            {/* Wallet Card */}
             <WalletCard
               coins={profile?.coins || 0}
               onWalletClick={handleOpenTransactionModal}
             />
             
-            {/* Achievements Grid */}
             <AchievementsGrid
-              achievements={achievements}
+              achievements={badges}
               onViewAll={handleOpenAchievementsModal}
             />
             
-            {/* Tabs */}
             <ProfileTabs
               activeTab={activeTab}
               onTabChange={setActiveTab}
@@ -1062,7 +908,6 @@ setAchievements(allAchievements);
               unitiesCount={unities.length}
             />
             
-            {/* Posts Tab */}
             {activeTab === 'posts' && (
               <div className={styles.postsTab}>
                 {posts.length === 0 ? (
@@ -1098,7 +943,6 @@ setAchievements(allAchievements);
               </div>
             )}
             
-            {/* Unities Tab */}
             {activeTab === 'unities' && (
               <div className={styles.unitiesTab}>
                 {unities.length === 0 ? (
@@ -1124,7 +968,6 @@ setAchievements(allAchievements);
               </div>
             )}
             
-            {/* Treasure Tab */}
             {activeTab === 'treasure' && (
               <div className={styles.treasureTab}>
                 <EmptyState
@@ -1138,10 +981,7 @@ setAchievements(allAchievements);
         </div>
       </div>
       
-      {/* ============================================
-          MODALS
-      ============================================ */}
-      
+      {/* Modals */}
       <EditProfileModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -1150,9 +990,7 @@ setAchievements(allAchievements);
           last_name: profile?.last_name || '',
           username: profile?.username || '',
           bio: profile?.bio || '',
-          category: profile?.category || 'Art',
-          website: profile?.website || '',
-          location: profile?.location || ''
+          category: profile?.category || 'Art'
         }}
         onSave={handleSaveProfile}
       />
@@ -1164,15 +1002,14 @@ setAchievements(allAchievements);
       />
       
       <AchievementsModal
-  isOpen={showAchievementsModal}
-  onClose={() => setShowAchievementsModal(false)}
-  achievements={badges}
-  onShare={(achievement) => {
-    // Handle sharing achievement
-    console.log('Share achievement:', achievement);
-    showToastMessage(`🏆 I earned the ${achievement.name} badge!`);
-  }}
-/>
+        isOpen={showAchievementsModal}
+        onClose={() => setShowAchievementsModal(false)}
+        achievements={badges}
+        onShare={(achievement) => {
+          console.log('Share achievement:', achievement);
+          showToastMessage(`🏆 I earned the ${achievement.name} badge!`);
+        }}
+      />
       
       <LevelModal
         isOpen={showLevelModal}
@@ -1190,7 +1027,7 @@ setAchievements(allAchievements);
         isOpen={showFollowersModal}
         onClose={() => setShowFollowersModal(false)}
         title="Followers"
-        users={followers}
+        followers={followers}
         onFollow={handleFollowUser}
         onUnfollow={handleUnfollowUser}
         showStats={true}
@@ -1201,42 +1038,32 @@ setAchievements(allAchievements);
         isOpen={showFollowingModal}
         onClose={() => setShowFollowingModal(false)}
         title="Following"
-        users={following}
+        followers={following}
         onFollow={handleFollowUser}
         onUnfollow={handleUnfollowUser}
         showStats={true}
         searchable={true}
       />
       
+      <ReferralModal
+        isOpen={showReferralModal}
+        onClose={() => setShowReferralModal(false)}
+        referralCode={referralCode}
+        referralInvites={referralInvites}
+        referralXPEarned={referralXPEarned}
+        onCopyCode={handleCopyReferralCode}
+        onShare={handleShareReferral}
+      />
       
-      {/* Debug - Check referral props */}
-{console.log('🟢 ReferralModal props:', { 
-  isOpen: showReferralModal, 
-  referralCode, 
-  referralInvites, 
-  referralXPEarned 
-})}
-{/* Referral Modal - UPDATED WITH CORRECT PROPS */}
-<ReferralModal
-  isOpen={showReferralModal}
-  onClose={() => setShowReferralModal(false)}
-  referralCode={referralCode}
-  referralInvites={referralInvites}
-  referralXPEarned={referralXPEarned}
-  onCopyCode={handleCopyReferralCode}
-  onShare={handleShareReferral}
-/>
-      
-      {/* Avatar Shop Modal */}
-<AvatarShopModal
-  isOpen={showAvatarShop}
-  onClose={() => setShowAvatarShop(false)}
-  ownedAvatars={ownedAvatars}
-  currentAvatar={currentAvatar}
-  coins={profile?.coins || 0}
-  onSelectAvatar={handleSelectAvatar}
-  onPurchase={handlePurchaseAvatar}
-/>
+      <AvatarShopModal
+        isOpen={showAvatarShop}
+        onClose={() => setShowAvatarShop(false)}
+        ownedAvatars={ownedAvatars}
+        currentAvatar={currentAvatar}
+        coins={profile?.coins || 0}
+        onSelectAvatar={handleSelectAvatar}
+        onPurchase={handlePurchaseAvatar}
+      />
       
       <ConfirmModal
         isOpen={showConfirmModal}

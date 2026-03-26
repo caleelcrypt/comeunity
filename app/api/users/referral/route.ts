@@ -1,28 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
-    const cookieStore = cookies()
-    
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
+    const supabase = await createSupabaseServerClient()
     
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
@@ -30,19 +11,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    // Get referral data from profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('own_referral_code, referral_invites, referral_xp_earned')
       .eq('id', user.id)
       .single()
     
-    if (profileError) {
-      console.error('Profile error:', profileError)
-      return NextResponse.json({ error: profileError.message }, { status: 500 })
-    }
+    if (profileError) throw profileError
     
-    // If profile has referral code, use it
     if (profile && profile.own_referral_code) {
       return NextResponse.json({
         success: true,
@@ -62,6 +38,7 @@ export async function GET(request: Request) {
     
   } catch (error) {
     console.error('Error in referral API:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
