@@ -217,7 +217,7 @@ const generateAllAchievements = (profile: UserProfile, postsCount: number, avata
 export default function MyProfilePage() {
   const router = useRouter();
   
-  // Profile states
+  // ALL useState hooks MUST be inside the component function
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState<string | null>(null);
@@ -227,11 +227,13 @@ export default function MyProfilePage() {
   const [unities, setUnities] = useState<Unity[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [ownedAvatars, setOwnedAvatars] = useState<string[]>([]);
-  const [currentAvatar, setCurrentAvatar] = useState('😎');  // ← MAKE SURE THIS EXISTS
+  const [currentAvatar, setCurrentAvatar] = useState('😎');  // ← ADD THIS LINE
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [following, setFollowing] = useState<Follower[]>([]);
   
+  
+  // ... rest of your state
   // ... rest of your state
   // Inside the component, with your other state variables
 const [tipsGiven, setTipsGiven] = useState(0);
@@ -504,26 +506,26 @@ const fetchTipsData = async (userId: string) => {
   // ============================================
   
   const fetchProfileData = async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    
-    if (!authUser) {
-      router.push('/auth');
-      return null;
-    }
-    
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", authUser.id)
-      .single();
-    
-    if (profileData) {
-      setProfile(profileData);
-      setCurrentAvatar(profileData.avatar || '😎');
-    }
-    
-    return profileData;
-  };
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  
+  if (!authUser) {
+    router.push('/auth');
+    return null;
+  }
+  
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", authUser.id)
+    .single();
+  
+  if (profileData) {
+    setProfile(profileData);
+    setCurrentAvatar(profileData.avatar || '😎');  // ← ADD THIS
+  }
+  
+  return profileData;
+};
   
  const fetchAllData = async () => {
   setLoading(true);
