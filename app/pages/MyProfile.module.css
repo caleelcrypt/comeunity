@@ -559,3 +559,57 @@
     box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5);
   }
 }
+
+
+/* MyProfile.module.css - add these styles */
+
+.mainContent {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  padding-bottom: 80px;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  /* Ensure content starts at top */
+  margin-top: 0;
+  padding-top: 16px;
+}
+
+/* For desktop, ensure no extra top margin */
+@media (min-width: 768px) {
+  .mainContent {
+    padding-top: 16px;
+  }
+}
+
+/* Ensure the header is sticky at the top */
+.header {
+  flex-shrink: 0;
+  padding: 16px;
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Ensure main content scrolls */
+.mainContent {
+  flex: 1;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 16px;
+  padding-bottom: 80px;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+/* For mobile */
+@media (max-width: 767px) {
+  .mainContent {
+    padding-bottom: 90px;
+  }
+}

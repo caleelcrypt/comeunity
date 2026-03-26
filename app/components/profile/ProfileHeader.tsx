@@ -54,11 +54,11 @@ export default function ProfileHeader({
       
       <div className={styles.profileInfo}>
         <div className={styles.avatarContainer} onClick={onAvatarClick}>
-          <div className={styles.profileAvatarLarge}>{avatar}</div>
-          <div className={styles.avatarShopBadge}>
-            <i className="fas fa-shopping-cart"></i>
-          </div>
-        </div>
+  <div className={styles.profileAvatarLarge}>{avatar}</div>
+  <div className={styles.avatarShopBadge}>
+    <i className="fas fa-shopping-cart"></i>
+  </div>
+</div>
         
         <div className={styles.profileName}>
           {firstName} {lastName}

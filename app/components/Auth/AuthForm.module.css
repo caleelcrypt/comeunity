@@ -280,3 +280,27 @@
   color: #10b981;
   display: block;
 }
+
+/* Fix for auth form scrolling */
+.form-panel {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding: 28px 28px 36px;
+}
+
+@media (max-width: 767px) {
+  .form-panel {
+    max-height: calc(100vh - 140px);
+    padding: 20px 20px 40px;
+  }
+  
+  .input-field {
+    margin-bottom: 20px;
+  }
+}
+
+/* Ensure the signup panel scrolls properly */
+#signupPanel {
+  overflow-y: auto;
+  max-height: 100%;
+}

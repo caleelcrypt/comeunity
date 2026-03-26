@@ -1,13 +1,6 @@
 'use client';
 import React from 'react';
-import styles from './AvatarShopModal.module.css';
-
-interface Avatar {
-  emoji: string;
-  name: string;
-  price: number;
-  tier: string;
-}
+import { ALL_AVATARS, tierConfig } from '../../../../lib/avatarData';
 
 interface AvatarShopModalProps {
   isOpen: boolean;
@@ -15,10 +8,8 @@ interface AvatarShopModalProps {
   ownedAvatars: string[];
   currentAvatar: string;
   coins: number;
-  freeAvatars: Avatar[];
-  premiumAvatars: Avatar[];
   onSelectAvatar: (emoji: string) => void;
-  onPurchase: (avatar: Avatar) => void;
+  onPurchase: (avatar: any) => void;
 }
 
 export default function AvatarShopModal({
@@ -27,62 +18,124 @@ export default function AvatarShopModal({
   ownedAvatars,
   currentAvatar,
   coins,
-  freeAvatars,
-  premiumAvatars,
   onSelectAvatar,
   onPurchase
 }: AvatarShopModalProps) {
   if (!isOpen) return null;
 
+  const totalOwned = ownedAvatars.length;
+  const totalAvatars = ALL_AVATARS.length;
+  const progress = (totalOwned / totalAvatars) * 100;
+
   return (
-    <div className={`avatar-shop-modal ${isOpen ? 'show' : ''}`}>
-      <div className="shop-header">
-        <h2>🎨 Avatar Shop</h2>
-        <span className="close-modal" onClick={onClose}>&times;</span>
-      </div>
-      
-      <div style={{ padding: '0 20px' }}>
-        <div className="wallet-badge" style={{ display: 'inline-flex' }}>
-          <i className="fas fa-coins"></i> <span>{coins}</span> coins
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.95)',
+      zIndex: 999999,
+      overflow: 'auto',
+      padding: '20px'
+    }}>
+      <div style={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        background: '#0a0a0f',
+        borderRadius: '24px',
+        padding: '24px',
+        border: '1px solid rgba(255,77,109,0.3)'
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <h2 style={{ color: 'white', margin: 0 }}>🎨 Avatar Collection</h2>
+          <button onClick={onClose} style={{ fontSize: '28px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>×</button>
         </div>
-      </div>
-      
-      <h3 style={{ padding: '0 20px', marginTop: '16px' }}>🎁 FREE AVATARS</h3>
-      <div className="free-avatars-grid">
-        {freeAvatars.map(avatar => (
-          <div
-            key={avatar.emoji}
-            className={`avatar-item ${currentAvatar === avatar.emoji ? 'selected' : ''}`}
-            onClick={() => onSelectAvatar(avatar.emoji)}
-          >
-            <div className="avatar-preview">{avatar.emoji}</div>
-            <div className="avatar-name">{avatar.name}</div>
-            <div style={{ fontSize: '10px' }}>
-              {ownedAvatars.includes(avatar.emoji) ? 'Owned' : 'Free'}
-            </div>
+        
+        {/* Stats */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: '12px', 
+          marginBottom: '20px',
+          background: 'rgba(255,255,255,0.05)',
+          borderRadius: '16px',
+          padding: '16px'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: '#ffd700', fontSize: '24px', fontWeight: 'bold' }}>{coins}</div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Coins</div>
           </div>
-        ))}
-      </div>
-      
-      <h3 style={{ padding: '0 20px' }}>✨ PREMIUM AVATARS</h3>
-      <div className="premium-avatars-grid">
-        {premiumAvatars.map(avatar => (
-          <div
-            key={avatar.emoji}
-            className="premium-avatar-card"
-            onClick={() => !ownedAvatars.includes(avatar.emoji) && onPurchase(avatar)}
-          >
-            <div style={{ fontSize: '48px' }}>{avatar.emoji}</div>
-            <div className="avatar-name">{avatar.name}</div>
-            <div style={{ color: '#ffd700' }}>{avatar.price} 🪙</div>
-            <button
-              className="purchase-btn"
-              style={ownedAvatars.includes(avatar.emoji) ? { opacity: 0.5 } : {}}
-            >
-              {ownedAvatars.includes(avatar.emoji) ? 'Owned' : 'Buy'}
-            </button>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: '#ffd700', fontSize: '24px', fontWeight: 'bold' }}>{totalOwned}/{totalAvatars}</div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Owned</div>
           </div>
-        ))}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: '#ffd700', fontSize: '24px', fontWeight: 'bold' }}>{Math.round(progress)}%</div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Complete</div>
+          </div>
+        </div>
+        
+        {/* Progress Bar */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #ffd700, #ff4d6d)' }}></div>
+          </div>
+        </div>
+        
+        {/* Avatar Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
+          {ALL_AVATARS.map(avatar => {
+            const owned = ownedAvatars.includes(avatar.emoji);
+            const isCurrent = currentAvatar === avatar.emoji;
+            const canAfford = coins >= avatar.price;
+            
+            return (
+              <div key={avatar.emoji} style={{
+                textAlign: 'center',
+                padding: '12px',
+                background: owned ? 'rgba(255,77,109,0.1)' : 'rgba(255,255,255,0.03)',
+                borderRadius: '16px',
+                border: isCurrent ? '2px solid #ff4d6d' : '1px solid rgba(255,255,255,0.1)',
+                cursor: owned ? 'pointer' : 'default',
+                transition: 'all 0.2s'
+              }} onClick={() => owned && onSelectAvatar(avatar.emoji)}>
+                <div style={{ fontSize: '48px' }}>{avatar.emoji}</div>
+                <div style={{ color: 'white', fontSize: '12px', fontWeight: '500', marginTop: '8px' }}>{avatar.name}</div>
+                {avatar.price > 0 ? (
+                  <div style={{ color: '#ffd700', fontSize: '11px', marginTop: '4px' }}>{avatar.price} 🪙</div>
+                ) : (
+                  <div style={{ color: '#10b981', fontSize: '11px', marginTop: '4px' }}>FREE</div>
+                )}
+                {owned ? (
+                  <div style={{ color: isCurrent ? '#ff4d6d' : '#10b981', fontSize: '11px', marginTop: '8px' }}>
+                    {isCurrent ? '✓ Equipped' : 'Owned'}
+                  </div>
+                ) : (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onPurchase(avatar); }}
+                    disabled={!canAfford}
+                    style={{
+                      marginTop: '8px',
+                      padding: '6px 12px',
+                      background: canAfford ? 'linear-gradient(135deg, #ff4d6d, #b5179e)' : '#555',
+                      border: 'none',
+                      borderRadius: '20px',
+                      color: 'white',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: canAfford ? 'pointer' : 'not-allowed',
+                      width: '100%'
+                    }}
+                  >
+                    {canAfford ? 'Buy' : `Need ${avatar.price - coins} more`}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -32,3 +32,14 @@
   ],
   "exclude": ["node_modules"]
 }
+
+
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@/lib/*": ["./lib/*"]
+    }
+  }
+}

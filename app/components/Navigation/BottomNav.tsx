@@ -14,54 +14,29 @@ export default function BottomNav({ currentPage, onPageChange }: BottomNavProps)
   const [isClient, setIsClient] = useState(false);
   
   const navItems = [
-    { icon: 'fas fa-home', label: 'Home', path: '/feed' },
-    { icon: 'fas fa-users', label: 'Unities', path: '/unities' },
-    { icon: 'fas fa-user', label: 'Profile', path: '/profile' }
+    { icon: 'fas fa-home', label: 'Home', path: '/feed', index: 0 },
+    { icon: 'fas fa-users', label: 'Unities', path: '/unities', index: 1 },
+    { icon: 'fas fa-user', label: 'Profile', path: '/profile/me', index: 2 }
   ];
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const createRipple = (event: React.MouseEvent | React.TouchEvent, element: HTMLElement) => {
-    if (!isClient) return;
-    const rect = element.getBoundingClientRect();
-    const clientX = 'touches' in event ? event.touches[0].clientX : (event as React.MouseEvent).clientX;
-    const clientY = 'touches' in event ? event.touches[0].clientY : (event as React.MouseEvent).clientY;
-    const size = Math.max(rect.width, rect.height);
-    const x = clientX - rect.left - size / 2;
-    const y = clientY - rect.top - size / 2;
-    
-    const ripple = document.createElement('span');
-    ripple.className = styles.ripple;
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
-    element.style.position = 'relative';
-    element.appendChild(ripple);
-    
-    setTimeout(() => ripple.remove(), 450);
-  };
-
-  const handleNavClick = (index: number, event: React.MouseEvent | React.TouchEvent) => {
-    const target = event.currentTarget as HTMLElement;
-    if (isClient) {
-      createRipple(event, target);
-    }
-    
-    if (index !== currentPage) {
-      onPageChange(index);
-      router.push(navItems[index].path);
+  const handleNavClick = (item: typeof navItems[0]) => {
+    if (item.index !== currentPage) {
+      onPageChange(item.index);
+      router.push(item.path);
     }
   };
 
   return (
     <div className={styles.bottomNav}>
-      {navItems.map((item, index) => (
+      {navItems.map((item) => (
         <div
-          key={index}
-          className={`${styles.navItem} ${currentPage === index ? styles.active : ''}`}
-          onClick={(e) => handleNavClick(index, e)}
+          key={item.index}
+          className={`${styles.navItem} ${currentPage === item.index ? styles.active : ''}`}
+          onClick={() => handleNavClick(item)}
         >
           <i className={item.icon}></i>
           <span>{item.label}</span>

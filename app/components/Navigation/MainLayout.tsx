@@ -42,6 +42,7 @@ export default function MainLayout() {
     );
   }
 
+  // Simple render without slider - just show the current page
   const renderPage = () => {
     switch (currentPage) {
       case 0:

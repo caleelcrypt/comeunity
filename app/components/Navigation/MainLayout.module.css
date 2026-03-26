@@ -19,6 +19,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  padding: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* For mobile - full screen */
@@ -27,30 +29,32 @@
     height: 100vh;
     border-radius: 0;
     max-width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  
+  .pageContainer {
+    padding-bottom: 70px;
   }
 }
 
-/* For desktop - centered with margin */
+/* For desktop - centered */
 @media (min-width: 768px) {
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    margin: 0;
-    padding: 20px;
-  }
-  
   .phoneFrame {
     height: 780px;
     border-radius: 44px;
-    margin: 0 auto;
+    margin: 20px auto;
     max-width: 480px;
     width: 100%;
     box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5);
     position: relative;
     top: auto;
-    transform: none;
+    left: auto;
+    right: auto;
+    bottom: auto;
   }
 }
 

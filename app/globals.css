@@ -22,7 +22,7 @@
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Global Reset - NO SLIDERS ALLOWED */
+/* Global Reset */
 * {
   margin: 0;
   padding: 0;
@@ -31,11 +31,13 @@
   max-width: 100%;
 }
 
+/* Make sure body takes full height and centers content */
 html, body {
   height: 100%;
   width: 100%;
+  margin: 0;
+  padding: 0;
   overflow-x: hidden;
-  position: relative;
 }
 
 body {
@@ -50,13 +52,42 @@ body {
   overflow-x: hidden;
 }
 
+/* For mobile - no centering, full screen */
+@media (max-width: 767px) {
+  body {
+    display: block;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 0;
+  }
+}
+
+/* For desktop - center the phone */
+@media (min-width: 768px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+}
+
 /* Next.js root container */
 #__next {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   overflow-x: hidden;
+}
+
+/* For mobile, remove the flex centering */
+@media (max-width: 767px) {
+  #__next {
+    justify-content: flex-start;
+  }
 }
 
 /* ==================== SHARED MODAL STYLES ==================== */
@@ -325,59 +356,200 @@ body {
   transform: translateY(-2px);
 }
 
-/* Remove any separators between nav items */
-.bottom-nav .nav-item::after,
-.nav-item:not(:last-child)::after {
-  display: none !important;
-  content: none !important;
-}
-
-/* Fix for signup form scrolling */
-.form-panel {
-  max-height: calc(100vh - 150px);
+/* ==================== AUTH FORM SCROLLING FIX ==================== */
+/* Make auth container scrollable on mobile */
+.auth-container {
+  max-height: 90vh;
   overflow-y: auto;
-  padding-bottom: 20px;
+  margin: 0 auto;
 }
 
-/* Ensure the signup panel can scroll */
+/* For mobile, ensure auth form fits screen */
+@media (max-width: 767px) {
+  .auth-container {
+    max-height: 100vh;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+  
+  .form-panel {
+    padding-bottom: 30px;
+  }
+}
+
+/* Ensure signup panel is scrollable */
 #signupPanel {
   overflow-y: auto;
   max-height: 100%;
 }
 
-/* Make sure body takes full height and centers content */
-html, body {
-  height: 100%;
-  width: 100%;
-  margin: 0;
+/* Ensure no extra margins on containers */
+.profile-header,
+.player-status,
+.wallet-card,
+.achievements-section,
+.profile-tabs,
+.postsTab,
+.unitiesTab,
+.treasureTab {
+  margin-top: 0;
+}
+
+/* Ensure first element in main content has no top margin */
+.mainContent > *:first-child {
+  margin-top: 0;
+}
+
+/* ==================== FIX FOR CUT OFF CONTENT ==================== */
+
+/* Make auth container scroll properly */
+.auth-container {
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 0 auto;
   padding: 0;
-  overflow-x: hidden;
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(145deg, #0a0a12 0%, #030305 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  margin: 0;
-  padding: 20px;
-}
-
-/* For mobile, remove padding */
+/* For mobile - ensure full scroll */
 @media (max-width: 767px) {
-  body {
-    padding: 0;
+  .auth-container {
+    max-height: 100vh;
+    border-radius: 0;
+    overflow-y: auto;
+    height: 100%;
+  }
+  
+  .form-panel {
+    padding: 20px 20px 40px;
+    overflow-y: visible;
+  }
+  
+  /* Ensure all input fields are visible */
+  .input-field {
+    margin-bottom: 20px;
+  }
+  
+  /* Make sure the signup panel scrolls */
+  #signupPanel {
+    overflow-y: visible;
+    min-height: 100%;
   }
 }
 
-/* Next.js root container */
-#__next {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+/* For desktop - ensure proper scrolling within the frame */
+@media (min-width: 768px) {
+  .auth-container {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  
+  .form-panel {
+    padding: 28px 28px 36px;
+    overflow-y: visible;
+  }
 }
+
+/* Ensure the signup form is fully scrollable */
+#signupPanel {
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+/* Fix for the main layout cutting off top content */
+.phoneFrame {
+  overflow: hidden;
+  position: relative;
+}
+
+.pageContainer {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  padding: 0;
+  scroll-behavior: smooth;
+}
+
+/* Ensure first element in page container is visible */
+.pageContainer > :first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* Fix for the profile header not being cut off */
+.profile-header {
+  margin-top: 0;
+  padding-top: 24px;
+}
+
+/* For mobile, ensure the app fills the screen without cutting off */
+@media (max-width: 767px) {
+  .app-container {
+    height: 100%;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+  
+  .app-wrapper {
+    height: auto;
+    min-height: 100%;
+    padding-bottom: 20px;
+  }
+  
+  .main-content {
+    padding-bottom: 80px;
+  }
+}
+
+/* ==================== SCROLLING FIXES ==================== */
+
+/* Ensure all scrollable containers work */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix for auth form scrolling */
+.auth-container {
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 0 auto;
+}
+
+@media (max-width: 767px) {
+  .auth-container {
+    max-height: 100vh;
+    height: 100%;
+    border-radius: 0;
+  }
+  
+  .form-panel {
+    overflow-y: visible;
+    padding-bottom: 40px;
+  }
+}
+
+/* Ensure signup panel is scrollable */
+#signupPanel {
+  overflow-y: visible;
+  min-height: 100%;
+}
+
+/* Make sure content doesn't get cut off at the top */
+.profile-header {
+  margin-top: 0;
+  padding-top: 24px;
+}
+
+.mainContent > *:first-child {
+  margin-top: 0;
+}
+
+/* Force scrolling on all pages */
+.phoneFrame,
+.pageContainer,
+.mainContent,
+.postsTab,
+.unitiesTab,
+.treasureTab {
+  overflow-y: auto !important;
+}
+
