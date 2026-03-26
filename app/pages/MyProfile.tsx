@@ -437,24 +437,23 @@ const fetchFollowing = async (userId: string) => {
   // DATA FETCHING
   // ============================================
   
-  const fetchProfileData = async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (!authUser) {
-      router.push('/auth');
-      return null;
-    }
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", authUser.id)
-      .single();
-    if (profileData) {
-      setProfile(profileData);
-      setCurrentAvatar(profileData.avatar || '😎');
-    }
-    return profileData;
-  };
-  
+ const fetchProfileData = async () => {
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) {
+    router.push('/auth');
+    return null;
+  }
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", authUser.id)
+    .single();
+  if (profileData) {
+    setProfile(profileData);
+    setCurrentAvatar(profileData.avatar || '😎');  // ← This also uses the setter
+  }
+  return profileData;
+};
   const fetchAllData = async () => {
     setLoading(true);
     
@@ -632,11 +631,11 @@ const fetchFollowing = async (userId: string) => {
   
   const handleOpenAvatarShop = () => setShowAvatarShop(true);
   
-  const handleSelectAvatar = async (emoji: string) => {
+ const handleSelectAvatar = async (emoji: string) => {
   if (!profile) return;
   
   if (ownedAvatars.includes(emoji)) {
-    setCurrentAvatar(emoji);  // ← This should now work
+    setCurrentAvatar(emoji);  // ← This uses the setter
     await supabase
       .from("profiles")
       .update({ avatar: emoji })
