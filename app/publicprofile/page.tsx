@@ -3,7 +3,8 @@ import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PublicProfile from '../components/PublicProfile/PublicProfile';
 
-export default function PublicProfilePage() {
+// Create a separate component that uses useSearchParams
+function PublicProfileContent() {
   const searchParams = useSearchParams();
   const username = searchParams.get('username');
   
@@ -18,13 +19,18 @@ export default function PublicProfilePage() {
     );
   }
   
+  return <PublicProfile username={username} />;
+}
+
+// Main page component with Suspense boundary
+export default function PublicProfilePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+        <div className="text-white">Loading profile...</div>
       </div>
     }>
-      <PublicProfile username={username} />
+      <PublicProfileContent />
     </Suspense>
   );
 }

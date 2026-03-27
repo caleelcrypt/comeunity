@@ -681,10 +681,10 @@ const AuthForm: React.FC = () => {
       }, 1500);
       
     } catch (error) {
-      console.error("❌ Signup error:", error);
-      showToastMsg(`❌ Signup error: ${error.message}`);
-      setLoading(false);
-    }
+  console.error("❌ Signup error:", error);
+  showToastMsg(`❌ Signup error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  setLoading(false);
+}
   };
 
   const handleLogout = async () => {

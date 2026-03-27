@@ -1,6 +1,6 @@
 ﻿'use client';
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from '../../../../lib/supabaseClient';
 import { ALL_AVATARS, tierConfig, getNextAffordableAvatar, Avatar } from '../../../../lib/avatarData';
 
 interface AvatarShopModalProps {
