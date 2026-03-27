@@ -1,13 +1,7 @@
-﻿// app/components/profile/avatar-shop/AvatarShopModal2.tsx
-'use client';
-import React, { useState } from 'react';
-import { 
-  ALL_AVATARS, 
-  tierConfig, 
-  getNextAffordableAvatar,
-  getCompletionPercentage,
-  Avatar 
-} from '../../../../lib/avatarData';
+﻿'use client';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabaseClient';
+import { ALL_AVATARS, tierConfig, getNextAffordableAvatar, Avatar } from '../../../../lib/avatarData';
 
 interface AvatarShopModalProps {
   isOpen: boolean;
@@ -48,15 +42,8 @@ export default function AvatarShopModal({
   const ownedCount = ownedAvatars.length;
   const totalCount = ALL_AVATARS.length;
   const completionPercentage = (ownedCount / totalCount) * 100;
-  const nextAffordable = getNextAffordableAvatar(ownedAvatars, coins);
 
   if (!isOpen) return null;
-
-  // Helper to get tier color safely
-  const getTierColor = (tier: string): string => {
-    const config = tierConfig[tier as keyof typeof tierConfig];
-    return config?.color || '#6b7280';
-  };
 
   return (
     <div style={{
