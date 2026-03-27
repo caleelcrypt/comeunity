@@ -41,7 +41,8 @@ export default function FeedPage() {
 
     fetchData();
   }, [router]);
-
+ 
+  
   const handleVisitProfile = () => {
     router.push(`/profile/${username}`);
   };
@@ -49,7 +50,9 @@ export default function FeedPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
-  };
+  }; 
+
+  
 
   if (loading) {
     return (

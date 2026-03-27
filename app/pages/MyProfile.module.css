@@ -128,33 +128,60 @@
   color: #ff4d6d;
 }
 
-/* Scrollable Main Content */
+/* Scrollable Main Content - FIXED */
 .mainContent {
   flex: 1;
   overflow-y: auto;
   margin-top: 60px;
   margin-bottom: 70px;
-  padding: 0;
+  padding: 16px 16px 20px 16px;
   width: 100%;
+  box-sizing: border-box;
 }
 
-/* Hide scrollbar but keep functionality */
+/* Show scrollbar but make it subtle */
 .mainContent::-webkit-scrollbar {
-  display: none;
+  width: 4px;
 }
 
+.mainContent::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.mainContent::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ff4d6d, #b5179e);
+  border-radius: 4px;
+}
+
+/* For Firefox */
 .mainContent {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #ff4d6d rgba(255, 255, 255, 0.05);
 }
 
 /* Content sections */
 .postsTab,
 .unitiesTab,
 .treasureTab {
-  padding: 16px;
+  padding: 8px 0;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Ensure all cards have proper spacing */
+.profile-header,
+.profile-stats,
+.achievements-grid,
+.profile-tabs {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* XP Wallet Section */
+.xpWalletSection {
+  margin-bottom: 20px;
+  width: 100%;
 }
 
 /* Loading State */
@@ -207,6 +234,7 @@
   .mainContent {
     margin-top: 60px;
     margin-bottom: 70px;
+    padding: 12px;
   }
   
   .walletBadge span {
@@ -215,5 +243,11 @@
   
   .logo {
     font-size: 16px;
+  }
+  
+  .postsTab,
+  .unitiesTab,
+  .treasureTab {
+    padding: 4px 0;
   }
 }

@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabaseClient';
 import LandingPage from './components/Landing/LandingPage';
-import FeedPage from './pages/Feed';
 
 export default function HomePage() {
   const router = useRouter();
@@ -20,7 +19,6 @@ export default function HomePage() {
     checkUser();
   }, []);
 
-  // Handle redirect after loading
   useEffect(() => {
     if (!loading) {
       if (user) {

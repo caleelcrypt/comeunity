@@ -6,13 +6,13 @@ import { supabase } from '../../lib/supabaseClient';
 // Component Imports
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileStats from '../components/profile/ProfileStats';
-import LevelCard from '../components/profile/LevelCard';
-import WalletCard from '../components/profile/WalletCard';
+import XPWalletCard from '../components/profile/XPWalletCard';
 import AchievementsGrid from '../components/profile/AchievementsGrid';
 import ProfileTabs from '../components/profile/ProfileTabs';
 import UnityCard from '../components/profile/UnityCard';
 import PostCard from '../components/profile/PostCard';
 import EmptyState from '../components/profile/EmptyState';
+import LevelUpToast from '../components/LevelUpToast';
 
 // Modal Imports
 import EditProfileModal from '../components/profile/modals/EditProfileModal';
@@ -100,12 +100,11 @@ type Achievement = {
   earnedAt?: string;
 };
 
-// Update your Follower type to include displayName
 type Follower = {
   id: string;
   username: string;
   avatar: string;
-  displayName: string;  // ← ADD THIS (was display_name)
+  displayName: string;
   is_following?: boolean;
   bio?: string;
   category?: string;
@@ -120,6 +119,8 @@ type Follower = {
 const calculateLevel = (xp: number): number => {
   return Math.floor(Math.sqrt(Math.max(0, xp) / 100)) + 1;
 };
+
+
 
 const getLevelTitle = (level: number): string => {
   const titles = ['Rookie', 'Newbie', 'Explorer', 'Adventurer', 'Master', 'Elite', 'Pro', 'Expert', 'Champion', 'Legend', 'Mythic', 'Godly'];
@@ -250,59 +251,82 @@ export default function MyProfilePage() {
   // Tab state
   const [activeTab, setActiveTab] = useState<'posts' | 'unities' | 'treasure'>('posts');
   
+  // XP transactions state
+  const [xpTransactions, setXpTransactions] = useState<Transaction[]>([]);
+  
   // Referral state
   const [referralInvites, setReferralInvites] = useState(0);
   const [referralXPEarned, setReferralXPEarned] = useState(0);
   const [referralCode, setReferralCode] = useState('');
   const [referralStats, setReferralStats] = useState<any>(null);
   
+  // ADD THESE STATE VARIABLES HERE - INSIDE THE COMPONENT
+  // ============================================
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [levelUpData, setLevelUpData] = useState({ level: 0, levelTitle: '' });
+
+
   // ============================================
   // FOLLOWERS FUNCTIONS
   // ============================================
   
- const fetchFollowers = async (userId: string) => {
-  try {
-    const response = await fetch(`/api/users/followers?userId=${userId}&limit=100&sortBy=recent`);
-    if (response.ok) {
-      const data = await response.json();
-      setFollowers(data.map((user: any) => ({
-        id: user.id,
-        username: user.username,
-        avatar: user.avatar || user.display_name?.charAt(0) || '👤',
-        displayName: user.display_name,  // ← CHANGE THIS (was display_name)
-        is_following: user.is_following,
-        bio: user.bio,
-        category: user.category,
-        followers_count: user.followers_count,
-        following_count: user.following_count
-      })));
+  const fetchFollowers = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/followers?userId=${userId}&limit=100&sortBy=recent`);
+      if (response.ok) {
+        const data = await response.json();
+        setFollowers(data.map((user: any) => ({
+          id: user.id,
+          username: user.username,
+          avatar: user.avatar || user.display_name?.charAt(0) || '👤',
+          displayName: user.display_name,
+          is_following: user.is_following,
+          bio: user.bio,
+          category: user.category,
+          followers_count: user.followers_count,
+          following_count: user.following_count
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching followers:', error);
     }
-  } catch (error) {
-    console.error('Error fetching followers:', error);
-  }
-};
+  };
 
-const fetchFollowing = async (userId: string) => {
-  try {
-    const response = await fetch(`/api/users/following?userId=${userId}&limit=100&sortBy=recent`);
-    if (response.ok) {
-      const data = await response.json();
-      setFollowing(data.map((user: any) => ({
-        id: user.id,
-        username: user.username,
-        avatar: user.avatar || user.display_name?.charAt(0) || '👤',
-        displayName: user.display_name,  // ← CHANGE THIS (was display_name)
-        is_following: true,
-        bio: user.bio,
-        category: user.category,
-        followers_count: user.followers_count,
-        following_count: user.following_count
-      })));
+  const fetchFollowing = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/following?userId=${userId}&limit=100&sortBy=recent`);
+      if (response.ok) {
+        const data = await response.json();
+        setFollowing(data.map((user: any) => ({
+          id: user.id,
+          username: user.username,
+          avatar: user.avatar || user.display_name?.charAt(0) || '👤',
+          displayName: user.display_name,
+          is_following: true,
+          bio: user.bio,
+          category: user.category,
+          followers_count: user.followers_count,
+          following_count: user.following_count
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching following:', error);
     }
-  } catch (error) {
-    console.error('Error fetching following:', error);
-  }
-};
+  };
+
+  const fetchXPTransactions = async () => {
+    if (!profile) return;
+    try {
+      const response = await fetch(`/api/users/transactions?userId=${profile.id}&type=xp`);
+      const data = await response.json();
+      if (data.success) {
+        setXpTransactions(data.transactions);
+      }
+    } catch (error) {
+      console.error('Error fetching XP transactions:', error);
+    }
+  };
+
   const fetchBadges = async () => {
     if (!profile) return;
     try {
@@ -359,7 +383,57 @@ const fetchFollowing = async (userId: string) => {
       showToastMessage('Referral code copied!');
     }
   };
+
+ const handleLikePost = async (postId: string) => {
+  if (!profile) return;
   
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  
+  if (post.liked_by_user) {
+    // Unlike
+    await supabase
+      .from("likes")
+      .delete()
+      .eq("user_id", profile.id)
+      .eq("post_id", postId);
+    
+    await supabase
+      .from("posts")
+      .update({ likes_count: post.likes_count - 1 })
+      .eq("id", postId);
+    
+    setPosts(posts.map(p => 
+      p.id === postId ? { ...p, likes_count: p.likes_count - 1, liked_by_user: false } : p
+    ));
+  } else {
+    // Like
+    await supabase
+      .from("likes")
+      .insert({ user_id: profile.id, post_id: postId });
+    
+    await supabase
+      .from("posts")
+      .update({ likes_count: post.likes_count + 1 })
+      .eq("id", postId);
+    
+    setPosts(posts.map(p => 
+      p.id === postId ? { ...p, likes_count: p.likes_count + 1, liked_by_user: true } : p
+    ));
+    
+    // Award XP to liker (5 XP)
+    await earnXP(5, `Liked a post`);
+    
+    // Award XP to post author (3 XP) if it's not your own post
+    if (post.user_id !== profile.id) {
+      // You'll need to add a function to award XP to another user
+      // This would require a separate function or RPC call
+      console.log(`Should award 3 XP to user ${post.user_id}`);
+    }
+    
+    showToastMessage(`❤️ Liked post! +5 XP`);
+  }
+};
   const handleShareReferral = (platform: string, referralLink: string) => {
     const text = `Join ComeUnity with my referral code ${referralCode} and get 50 XP! 🎉`;
     
@@ -437,43 +511,62 @@ const fetchFollowing = async (userId: string) => {
   // DATA FETCHING
   // ============================================
   
-const fetchProfileData = async () => {
+  const fetchProfileData = async () => {
+  console.log('🔵 fetchProfileData: Starting');
+  
   const { data: { user: authUser } } = await supabase.auth.getUser();
   
-  // Don't redirect - just return null if no user
   if (!authUser) {
-    console.error('No user found in fetchProfileData');
+    console.error('🔴 fetchProfileData: No user found');
     return null;
   }
   
-  const { data: profileData } = await supabase
+  console.log('🔵 fetchProfileData: User ID:', authUser.id);
+  
+  const { data: profileData, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", authUser.id)
     .single();
+  
+  if (error) {
+    console.error('🔴 fetchProfileData: Error fetching profile:', error);
+    return null;
+  }
+  
+  console.log('🔵 fetchProfileData: Profile data received:', profileData);
+  console.log('🔵 fetchProfileData: Username:', profileData?.username);
+  console.log('🔵 fetchProfileData: Coins:', profileData?.coins);
+  console.log('🔵 fetchProfileData: XP:', profileData?.xp);
     
   if (profileData) {
     setProfile(profileData);
     setCurrentAvatar(profileData.avatar || '😎');
+    console.log('🔵 fetchProfileData: Profile state updated');
+  } else {
+    console.error('🔴 fetchProfileData: No profile data returned');
   }
   
   return profileData;
 };
 
 const fetchAllData = async () => {
+  console.log('🔵 fetchAllData: Starting');
   setLoading(true);
   
   const { data: { user: authUser } } = await supabase.auth.getUser();
   
-  // If no user, show error but don't redirect - the parent route handles auth
   if (!authUser) {
-    console.error('No authenticated user found');
+    console.error('🔴 fetchAllData: No authenticated user found');
     setLoading(false);
     return;
   }
   
+  console.log('🔵 fetchAllData: User authenticated:', authUser.id);
+  
   // 1. Fetch profile
   const profileData = await fetchProfileData();
+  console.log('🔵 fetchAllData: Profile data after fetch:', profileData);
   
   // 2. Fetch owned avatars
   const { data: avatarsData } = await supabase
@@ -483,8 +576,10 @@ const fetchAllData = async () => {
   
   if (avatarsData && avatarsData.length > 0) {
     setOwnedAvatars(avatarsData.map(a => a.avatar_emoji));
+    console.log('🔵 fetchAllData: Avatars count:', avatarsData.length);
   } else {
     setOwnedAvatars(['😎']);
+    console.log('🔵 fetchAllData: No avatars, using default');
   }
   
   // 3. Fetch posts
@@ -493,7 +588,10 @@ const fetchAllData = async () => {
     .select("*")
     .eq("user_id", authUser.id)
     .order("created_at", { ascending: false });
-  if (postsData) setPosts(postsData);
+  if (postsData) {
+    setPosts(postsData);
+    console.log('🔵 fetchAllData: Posts count:', postsData.length);
+  }
   
   // 4. Fetch unities
   const { data: unitiesData } = await supabase
@@ -507,6 +605,7 @@ const fetchAllData = async () => {
       members: 12400
     }));
     setUnities(formattedUnities);
+    console.log('🔵 fetchAllData: Unities count:', unitiesData.length);
   }
   
   // 5. Fetch transactions
@@ -522,6 +621,7 @@ const fetchAllData = async () => {
       ...t,
       date: t.created_at || new Date().toISOString()
     })));
+    console.log('🔵 fetchAllData: Transactions count:', transactionsData.length);
   } else {
     setTransactions([]);
   }
@@ -540,17 +640,21 @@ const fetchAllData = async () => {
   // 8. Fetch tips data
   await fetchTipsData(authUser.id);
   
-  // 9. Fetch badges
+  // 9. Fetch XP transactions
+  await fetchXPTransactions();
+  
+  // 10. Fetch badges
   await fetchBadges();
   
-  // 10. Set referral code from profile
+  // 11. Set referral code from profile
   if (profileData && profileData.own_referral_code) {
     setReferralCode(profileData.own_referral_code);
     setReferralInvites(profileData.referral_invites || 0);
     setReferralXPEarned(profileData.referral_xp_earned || 0);
+    console.log('🔵 fetchAllData: Referral code set:', profileData.own_referral_code);
   }
   
-  // 11. Generate achievements as fallback
+  // 12. Generate achievements as fallback
   const allAchievements = generateAllAchievements(
     profileData,
     postsData?.length || 0,
@@ -562,33 +666,93 @@ const fetchAllData = async () => {
     reportsSubmitted
   );
   
-  // 12. Only use fallback if badges array is empty
+  // 13. Only use fallback if badges array is empty
   if (badges.length === 0) {
     setBadges(allAchievements);
   }
   
+  console.log('🔵 fetchAllData: Final profile state - Coins:', profileData?.coins, 'XP:', profileData?.xp);
   setLoading(false);
+  console.log('🔵 fetchAllData: Completed');
 };
   // ============================================
   // XP EARNING FUNCTION
   // ============================================
   
   const earnXP = async (amount: number, reason: string) => {
-    if (!profile) return;
-    const newXP = profile.xp + amount;
-    await supabase
-      .from("profiles")
-      .update({ xp: newXP })
-      .eq("id", profile.id);
-    setProfile({ ...profile, xp: newXP });
-    const oldLevel = calculateLevel(profile.xp);
-    const newLevel = calculateLevel(newXP);
-    if (newLevel > oldLevel) {
-      showToastMessage(`🎉 LEVEL UP! You're now Level ${newLevel} ${getLevelTitle(newLevel)}! 🎉`);
-    }
-    return newXP;
-  };
+  if (!profile) return;
   
+  const newXP = profile.xp + amount;
+  const oldLevel = calculateLevel(profile.xp);
+  const newLevel = calculateLevel(newXP);
+  
+  // Calculate bonus
+  let bonusXP = 0;
+  let bonusCoins = 0;
+  
+  if (newLevel > oldLevel) {
+    const levelDiff = newLevel - oldLevel;
+    bonusXP = 100 * levelDiff;
+    bonusCoins = 50 * levelDiff;
+  }
+  
+  // Update profile with XP and bonus
+  const { error } = await supabase
+    .from("profiles")
+    .update({ 
+      xp: newXP + bonusXP,
+      coins: profile.coins + bonusCoins
+    })
+    .eq("id", profile.id);
+  
+  if (error) {
+    console.error('Error updating XP:', error);
+    showToastMessage('❌ Failed to update XP');
+    return;
+  }
+  
+  // Update local state
+  setProfile({ 
+    ...profile, 
+    xp: newXP + bonusXP,
+    coins: profile.coins + bonusCoins
+  });
+  
+  // Check for level up and show toast
+  if (newLevel > oldLevel) {
+    const newLevelTitle = getLevelTitle(newLevel);
+    setLevelUpData({ level: newLevel, levelTitle: newLevelTitle });
+    setShowLevelUp(true);
+    
+    // Show detailed level up message
+    showToastMessage(
+      `🎉 LEVEL UP! You're now Level ${newLevel} ${newLevelTitle}! 🎉\n` +
+      `✨ +${bonusXP} XP & +${bonusCoins} coins bonus! ✨`
+    );
+    
+    // Create transaction for level up bonus
+    await supabase
+      .from('transactions')
+      .insert({
+        user_id: profile.id,
+        type: `Level Up Bonus - Level ${newLevel}`,
+        amount: bonusCoins,
+        metadata: { 
+          xp_gained: bonusXP, 
+          coins_gained: bonusCoins,
+          old_level: oldLevel,
+          new_level: newLevel
+        }
+      });
+  } else {
+    // Just show regular XP gain (optional)
+    if (amount > 0) {
+      showToastMessage(`✨ +${amount} XP! ✨`);
+    }
+  }
+  
+  return newXP + bonusXP;
+};
   // ============================================
   // HANDLERS
   // ============================================
@@ -639,22 +803,23 @@ const fetchAllData = async () => {
   
   const handleOpenAvatarShop = () => setShowAvatarShop(true);
   
- const handleSelectAvatar = async (emoji: string) => {
-  if (!profile) return;
+  const handleSelectAvatar = async (emoji: string) => {
+    if (!profile) return;
+    
+    if (ownedAvatars.includes(emoji)) {
+      setCurrentAvatar(emoji);
+      await supabase
+        .from("profiles")
+        .update({ avatar: emoji })
+        .eq("id", profile.id);
+      setProfile({ ...profile, avatar: emoji });
+      setShowAvatarShop(false);
+      showToastMessage(`Avatar changed to ${emoji}!`);
+    } else {
+      showToastMessage("You don't own this avatar yet!");
+    }
+  };
   
-  if (ownedAvatars.includes(emoji)) {
-    setCurrentAvatar(emoji);  // ← This uses the setter
-    await supabase
-      .from("profiles")
-      .update({ avatar: emoji })
-      .eq("id", profile.id);
-    setProfile({ ...profile, avatar: emoji });
-    setShowAvatarShop(false);
-    showToastMessage(`Avatar changed to ${emoji}!`);
-  } else {
-    showToastMessage("You don't own this avatar yet!");
-  }
-};
   const handlePurchaseAvatar = (avatar: { emoji: string; price: number; name: string }) => {
     if (ownedAvatars.includes(avatar.emoji)) {
       handleSelectAvatar(avatar.emoji);
@@ -730,40 +895,7 @@ const fetchAllData = async () => {
     setShowReferralModal(true);
   };
   
-  const handleLikePost = async (postId: string) => {
-    if (!profile) return;
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
-    
-    if (post.liked_by_user) {
-      await supabase
-        .from("likes")
-        .delete()
-        .eq("user_id", profile.id)
-        .eq("post_id", postId);
-      await supabase
-        .from("posts")
-        .update({ likes_count: post.likes_count - 1 })
-        .eq("id", postId);
-      setPosts(posts.map(p => 
-        p.id === postId ? { ...p, likes_count: p.likes_count - 1, liked_by_user: false } : p
-      ));
-    } else {
-      await supabase
-        .from("likes")
-        .insert({ user_id: profile.id, post_id: postId });
-      await supabase
-        .from("posts")
-        .update({ likes_count: post.likes_count + 1 })
-        .eq("id", postId);
-      setPosts(posts.map(p => 
-        p.id === postId ? { ...p, likes_count: p.likes_count + 1, liked_by_user: true } : p
-      ));
-      await earnXP(5, `Liked a post`);
-      showToastMessage(`❤️ Liked post! +5 XP`);
-    }
-  };
-  
+ 
   const handleTipPost = async (postId: string, postUserId: string) => {
     if (!profile) return;
     const tipAmount = 20;
@@ -839,239 +971,249 @@ const fetchAllData = async () => {
   const nextXP = getXPForNextLevel(profile?.xp || 0);
   const progress = getProgressToNextLevel(profile?.xp || 0);
   
-  return (
-    <>
-      <div className={styles.myProfilePage}>
-        <div className={styles.container}>
-          {/* Header */}
-          <header className={styles.header}>
-            <div className={styles.headerContent}>
-              <div className={styles.leftGroup}>
-                <div className={styles.menuIcon} onClick={() => router.push('/feed')}>
-                  <i className="fas fa-bars"></i>
-                </div>
-                <div className={styles.logo} onClick={() => router.push('/feed')}>
-                  <span>COME</span><span>UNITY</span>
-                </div>
+ return (
+  <>
+    <div className={styles.myProfilePage}>
+      <div className={styles.container}>
+        {/* Header */}
+        <header className={styles.header}>
+          <div className={styles.headerContent}>
+            <div className={styles.leftGroup}>
+              <div className={styles.menuIcon} onClick={() => router.push('/feed')}>
+                <i className="fas fa-bars"></i>
               </div>
-              <div className={styles.headerActions}>
-                <div className={styles.walletBadge} onClick={handleOpenTransactionModal}>
-                  <i className="fas fa-coins"></i> <span>{profile?.coins?.toLocaleString() || 0}</span>
-                </div>
-                <div className={styles.headerIcon}>
-                  <i className="far fa-bell"></i>
-                </div>
+              <div className={styles.logo} onClick={() => router.push('/feed')}>
+                <span>COME</span><span>UNITY</span>
               </div>
             </div>
-          </header>
+            <div className={styles.headerActions}>
+              <div className={styles.walletBadge} onClick={handleOpenTransactionModal}>
+                <i className="fas fa-coins"></i> <span>{profile?.coins?.toLocaleString() || 0}</span>
+              </div>
+              <div className={styles.headerIcon}>
+                <i className="far fa-bell"></i>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* MAIN CONTENT */}
+        <main className={styles.mainContent}>
           
-          <main className={styles.mainContent}>
-            <ProfileHeader
-              avatar={currentAvatar}
-              firstName={profile?.first_name || ''}
-              lastName={profile?.last_name || ''}
-              username={profile?.username || ''}
-              category={profile?.category || 'Art'}
-              bio={profile?.bio || "No bio yet. Tap Edit to add one!"}
-              verificationLevel={profile?.verification_level || 'creator'}
-              onAvatarClick={handleOpenAvatarShop}
-              onEditProfile={handleEditProfile}
-              onShareProfile={handleShareProfile}
-            />
-            
-            <ProfileStats
-              followers={profile?.followers_count || 0}
-              following={profile?.following_count || 0}
-              onFollowersClick={handleOpenFollowersModal}
-              onFollowingClick={handleOpenFollowingModal}
-            />
-            
-            <LevelCard
-              level={level}
-              levelTitle={levelTitle}
-              xp={profile?.xp || 0}
-              nextXP={nextXP}
-              progress={progress}
-              streak={profile?.streak || 0}
-              onLevelClick={handleOpenLevelModal}
-              onStreakClick={handleOpenStreakModal}
-              onReferralClick={handleOpenReferralModal}
-            />
-            
-            <WalletCard
-              coins={profile?.coins || 0}
-              onWalletClick={handleOpenTransactionModal}
-            />
-            
-            <AchievementsGrid
-              achievements={badges}
-              onViewAll={handleOpenAchievementsModal}
-            />
-            
-            <ProfileTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              postsCount={posts.length}
-              unitiesCount={unities.length}
-            />
-            
-            {activeTab === 'posts' && (
-              <div className={styles.postsTab}>
-                {posts.length === 0 ? (
-                  <EmptyState
-                    icon="fa-camera"
-                    title="No Posts Yet"
-                    message="Share your first link or thought!"
-                    actionText="Create Post"
-                    onAction={handleCreatePost}
-                  />
-                ) : (
-                  posts.map(post => (
-                    <PostCard
-                      key={post.id}
-                      avatar={currentAvatar}
-                      author={`${profile?.first_name} ${profile?.last_name}`}
-                      time={formatDate(post.created_at)}
-                      content={post.content}
-                      link={post.link ? {
-                        url: post.link,
-                        domain: post.link_domain || 'link',
-                        title: post.link_title || 'View content'
-                      } : undefined}
-                      likes={post.likes_count}
-                      comments={post.comments_count}
-                      liked={post.liked_by_user}
-                      onLike={() => handleLikePost(post.id)}
-                      onComment={() => showToastMessage('Comment feature coming soon')}
-                      onTip={() => handleTipPost(post.id, post.user_id)}
-                    />
-                  ))
-                )}
-              </div>
-            )}
-            
-            {activeTab === 'unities' && (
-              <div className={styles.unitiesTab}>
-                {unities.length === 0 ? (
-                  <EmptyState
-                    icon="fa-users"
-                    title="No Unities Joined"
-                    message="Explore and join communities that match your interests!"
-                    actionText="Discover Unities"
-                    onAction={handleDiscoverUnities}
-                  />
-                ) : (
-                  unities.map(unity => (
-                    <UnityCard
-                      key={unity.id}
-                      name={unity.unity_name}
-                      icon={unity.unity_icon || '🎨'}
-                      members={unity.members}
-                      tag={unity.tag}
-                      onView={() => router.push(`/unity/${unity.unity_name}`)}
-                    />
-                  ))
-                )}
-              </div>
-            )}
-            
-            {activeTab === 'treasure' && (
-              <div className={styles.treasureTab}>
+          {/* Profile Header */}
+          <ProfileHeader
+            avatar={currentAvatar}
+            firstName={profile?.first_name || ''}
+            lastName={profile?.last_name || ''}
+            username={profile?.username || ''}
+            category={profile?.category || 'Art'}
+            bio={profile?.bio || "No bio yet. Tap Edit to add one!"}
+            verificationLevel={profile?.verification_level || 'creator'}
+            onAvatarClick={handleOpenAvatarShop}
+            onEditProfile={handleEditProfile}
+            onShareProfile={handleShareProfile}
+          />
+          
+          {/* Profile Stats */}
+          <ProfileStats
+            followers={profile?.followers_count || 0}
+            following={profile?.following_count || 0}
+            onFollowersClick={handleOpenFollowersModal}
+            onFollowingClick={handleOpenFollowingModal}
+          />
+          
+          {/* XP & Coins Card */}
+          <XPWalletCard
+            xp={profile?.xp || 0}
+            coins={profile?.coins || 0}
+            level={level}
+            levelTitle={levelTitle}
+            nextLevelXP={nextXP}
+            progress={progress}
+            streak={profile?.streak || 0}
+            onWalletClick={handleOpenTransactionModal}
+            onXPClick={handleOpenLevelModal}
+            onStreakClick={handleOpenStreakModal}
+            onReferralClick={handleOpenReferralModal}
+          />
+          
+          {/* Achievements Grid */}
+          <AchievementsGrid
+            achievements={badges}
+            onViewAll={handleOpenAchievementsModal}
+          />
+          
+          {/* Tabs */}
+          <ProfileTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            postsCount={posts.length}
+            unitiesCount={unities.length}
+          />
+          
+          {/* Posts Tab */}
+          {activeTab === 'posts' && (
+            <div className={styles.postsTab}>
+              {posts.length === 0 ? (
                 <EmptyState
-                  icon="fa-box-open"
-                  title="No Saved Posts"
-                  message="Treasure posts you love to find them later!"
+                  icon="fa-camera"
+                  title="No Posts Yet"
+                  message="Share your first link or thought!"
+                  actionText="Create Post"
+                  onAction={handleCreatePost}
                 />
-              </div>
-            )}
-          </main>
-        </div>
+              ) : (
+                posts.map(post => (
+                  <PostCard
+                    key={post.id}
+                    avatar={currentAvatar}
+                    author={`${profile?.first_name} ${profile?.last_name}`}
+                    time={formatDate(post.created_at)}
+                    content={post.content}
+                    link={post.link ? {
+                      url: post.link,
+                      domain: post.link_domain || 'link',
+                      title: post.link_title || 'View content'
+                    } : undefined}
+                    likes={post.likes_count}
+                    comments={post.comments_count}
+                    liked={post.liked_by_user}
+                    onLike={() => handleLikePost(post.id)}
+                    onComment={() => showToastMessage('Comment feature coming soon')}
+                    onTip={() => handleTipPost(post.id, post.user_id)}
+                  />
+                ))
+              )}
+            </div>
+          )}
+          
+          {/* Unities Tab */}
+          {activeTab === 'unities' && (
+            <div className={styles.unitiesTab}>
+              {unities.length === 0 ? (
+                <EmptyState
+                  icon="fa-users"
+                  title="No Unities Joined"
+                  message="Explore and join communities that match your interests!"
+                  actionText="Discover Unities"
+                  onAction={handleDiscoverUnities}
+                />
+              ) : (
+                unities.map(unity => (
+                  <UnityCard
+                    key={unity.id}
+                    name={unity.unity_name}
+                    icon={unity.unity_icon || '🎨'}
+                    members={unity.members}
+                    tag={unity.tag}
+                    onView={() => router.push(`/unity/${unity.unity_name}`)}
+                  />
+                ))
+              )}
+            </div>
+          )}
+          
+          {/* Treasure Tab */}
+          {activeTab === 'treasure' && (
+            <div className={styles.treasureTab}>
+              <EmptyState
+                icon="fa-box-open"
+                title="No Saved Posts"
+                message="Treasure posts you love to find them later!"
+              />
+            </div>
+          )}
+          
+        </main>
       </div>
-      
-      {/* Modals */}
-      <EditProfileModal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        profile={{
-          first_name: profile?.first_name || '',
-          last_name: profile?.last_name || '',
-          username: profile?.username || '',
-          bio: profile?.bio || '',
-          category: profile?.category || 'Art'
-        }}
-        onSave={handleSaveProfile}
-      />
-      
-      <TransactionModal
-        isOpen={showTransactionModal}
-        onClose={() => setShowTransactionModal(false)}
-        transactions={transactions}
-      />
-      
-      <AchievementsModal
-        isOpen={showAchievementsModal}
-        onClose={() => setShowAchievementsModal(false)}
-        achievements={badges}
-        onShare={(achievement) => {
-          console.log('Share achievement:', achievement);
-          showToastMessage(`🏆 I earned the ${achievement.name} badge!`);
-        }}
-      />
-      
-      <LevelModal
-        isOpen={showLevelModal}
-        onClose={() => setShowLevelModal(false)}
-        currentXP={profile?.xp || 0}
-      />
-      
-      <StreakModal
-        isOpen={showStreakModal}
-        onClose={() => setShowStreakModal(false)}
-        currentStreak={profile?.streak || 0}
-      />
-      
-      <FollowersModal
-        isOpen={showFollowersModal}
-        onClose={() => setShowFollowersModal(false)}
-        title="Followers"
-        followers={followers}
-        onFollow={handleFollowUser}
-        onUnfollow={handleUnfollowUser}
-        showStats={true}
-        searchable={true}
-      />
-      
-      <FollowersModal
-        isOpen={showFollowingModal}
-        onClose={() => setShowFollowingModal(false)}
-        title="Following"
-        followers={following}
-        onFollow={handleFollowUser}
-        onUnfollow={handleUnfollowUser}
-        showStats={true}
-        searchable={true}
-      />
-      
-      <ReferralModal
-        isOpen={showReferralModal}
-        onClose={() => setShowReferralModal(false)}
-        referralCode={referralCode}
-        referralInvites={referralInvites}
-        referralXPEarned={referralXPEarned}
-        onCopyCode={handleCopyReferralCode}
-        onShare={handleShareReferral}
-      />
-      
-      <AvatarShopModal
-        isOpen={showAvatarShop}
-        onClose={() => setShowAvatarShop(false)}
-        ownedAvatars={ownedAvatars}
-        currentAvatar={currentAvatar}
-        coins={profile?.coins || 0}
-        onSelectAvatar={handleSelectAvatar}
-        onPurchase={handlePurchaseAvatar}
-      />
-      
+    </div>
+    
+    {/* Modals */}
+    <EditProfileModal
+      isOpen={showEditModal}
+      onClose={() => setShowEditModal(false)}
+      profile={{
+        first_name: profile?.first_name || '',
+        last_name: profile?.last_name || '',
+        username: profile?.username || '',
+        bio: profile?.bio || '',
+        category: profile?.category || 'Art'
+      }}
+      onSave={handleSaveProfile}
+    />
+    
+    <TransactionModal
+      isOpen={showTransactionModal}
+      onClose={() => setShowTransactionModal(false)}
+      transactions={transactions}
+      xpTransactions={xpTransactions}
+    />
+    
+    <AchievementsModal
+      isOpen={showAchievementsModal}
+      onClose={() => setShowAchievementsModal(false)}
+      achievements={badges}
+      onShare={(achievement) => {
+        console.log('Share achievement:', achievement);
+        showToastMessage(`🏆 I earned the ${achievement.name} badge!`);
+      }}
+    />
+    
+    <LevelModal
+      isOpen={showLevelModal}
+      onClose={() => setShowLevelModal(false)}
+      currentXP={profile?.xp || 0}
+    />
+    
+    <StreakModal
+      isOpen={showStreakModal}
+      onClose={() => setShowStreakModal(false)}
+      currentStreak={profile?.streak || 0}
+    />
+    
+    <FollowersModal
+      isOpen={showFollowersModal}
+      onClose={() => setShowFollowersModal(false)}
+      title="Followers"
+      followers={followers}
+      onFollow={handleFollowUser}
+      onUnfollow={handleUnfollowUser}
+      showStats={true}
+      searchable={true}
+    />
+    
+    <FollowersModal
+      isOpen={showFollowingModal}
+      onClose={() => setShowFollowingModal(false)}
+      title="Following"
+      followers={following}
+      onFollow={handleFollowUser}
+      onUnfollow={handleUnfollowUser}
+      showStats={true}
+      searchable={true}
+    />
+    
+    <ReferralModal
+      isOpen={showReferralModal}
+      onClose={() => setShowReferralModal(false)}
+      referralCode={referralCode}
+      referralInvites={referralInvites}
+      referralXPEarned={referralXPEarned}
+      onCopyCode={handleCopyReferralCode}
+      onShare={handleShareReferral}
+    />
+    
+    <AvatarShopModal
+      isOpen={showAvatarShop}
+      onClose={() => setShowAvatarShop(false)}
+      ownedAvatars={ownedAvatars}
+      currentAvatar={currentAvatar}
+      coins={profile?.coins || 0}
+      onSelectAvatar={handleSelectAvatar}
+      onPurchase={handlePurchaseAvatar}
+    />
+    
+              {/* Confirm Purchase Modal */}
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => {
@@ -1083,10 +1225,20 @@ const fetchAllData = async () => {
         message={`Buy ${pendingPurchase?.emoji} ${pendingPurchase?.name} avatar for ${pendingPurchase?.price} coins?`}
       />
       
+      {/* Regular Toast - for general notifications */}
       {showToast && (
         <div className="toast">
           {showToast}
         </div>
+      )}
+      
+      {/* Level Up Toast - special animation for level ups */}
+      {showLevelUp && (
+        <LevelUpToast
+          level={levelUpData.level}
+          levelTitle={levelUpData.levelTitle}
+          onClose={() => setShowLevelUp(false)}
+        />
       )}
     </>
   );
