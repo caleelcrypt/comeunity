@@ -32,8 +32,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   // Only show bottom nav on authenticated pages
+  // AND don't redirect on public routes
   const showBottomNav = !isPublicRoute && user && (pathname === '/feed' || pathname === '/unities' || pathname === '/profile');
 
+  // Don't show loading on public routes
   if (loading && !isPublicRoute) {
     return (
       <div className={styles.loadingContainer}>
