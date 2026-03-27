@@ -27,11 +27,8 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  overflow-x: hidden;
-  max-width: 100%;
 }
 
-/* Make sure body takes full height and centers content */
 html, body {
   height: 100%;
   width: 100%;
@@ -45,24 +42,11 @@ body {
   background: linear-gradient(145deg, #0a0a12 0%, #030305 100%);
   margin: 0;
   padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* For mobile - no centering, full screen */
-@media (max-width: 767px) {
-  body {
-    display: block;
-    align-items: flex-start;
-    justify-content: flex-start;
-    padding: 0;
-  }
-}
-
-/* For desktop - center the phone */
+/* For desktop - center the phone frame */
 @media (min-width: 768px) {
   body {
     display: flex;
@@ -72,21 +56,11 @@ body {
   }
 }
 
-/* Next.js root container */
-#__next {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow-x: hidden;
-}
-
-/* For mobile, remove the flex centering */
+/* For mobile - full screen */
 @media (max-width: 767px) {
-  #__next {
-    justify-content: flex-start;
+  body {
+    display: block;
+    padding: 0;
   }
 }
 
@@ -106,7 +80,6 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
-  overflow: hidden;
 }
 
 .modal.show {
@@ -124,8 +97,8 @@ body {
   transform: scale(0.95);
   transition: transform 0.3s ease;
   box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5);
-  overflow-y: auto;
   max-height: 80vh;
+  overflow-y: auto;
 }
 
 .modal.show .modal-content {
@@ -146,6 +119,7 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  margin: 0;
 }
 
 .close-modal {
@@ -287,15 +261,6 @@ body {
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 /* ==================== SHARED UTILITY CLASSES ==================== */
 .text-gradient {
   background: linear-gradient(135deg, var(--gradient-1), var(--gradient-2), var(--gradient-3));
@@ -355,201 +320,3 @@ body {
   border-color: var(--gradient-1);
   transform: translateY(-2px);
 }
-
-/* ==================== AUTH FORM SCROLLING FIX ==================== */
-/* Make auth container scrollable on mobile */
-.auth-container {
-  max-height: 90vh;
-  overflow-y: auto;
-  margin: 0 auto;
-}
-
-/* For mobile, ensure auth form fits screen */
-@media (max-width: 767px) {
-  .auth-container {
-    max-height: 100vh;
-    border-radius: 0;
-    overflow-y: auto;
-  }
-  
-  .form-panel {
-    padding-bottom: 30px;
-  }
-}
-
-/* Ensure signup panel is scrollable */
-#signupPanel {
-  overflow-y: auto;
-  max-height: 100%;
-}
-
-/* Ensure no extra margins on containers */
-.profile-header,
-.player-status,
-.wallet-card,
-.achievements-section,
-.profile-tabs,
-.postsTab,
-.unitiesTab,
-.treasureTab {
-  margin-top: 0;
-}
-
-/* Ensure first element in main content has no top margin */
-.mainContent > *:first-child {
-  margin-top: 0;
-}
-
-/* ==================== FIX FOR CUT OFF CONTENT ==================== */
-
-/* Make auth container scroll properly */
-.auth-container {
-  max-height: 90vh;
-  overflow-y: auto;
-  margin: 0 auto;
-  padding: 0;
-}
-
-/* For mobile - ensure full scroll */
-@media (max-width: 767px) {
-  .auth-container {
-    max-height: 100vh;
-    border-radius: 0;
-    overflow-y: auto;
-    height: 100%;
-  }
-  
-  .form-panel {
-    padding: 20px 20px 40px;
-    overflow-y: visible;
-  }
-  
-  /* Ensure all input fields are visible */
-  .input-field {
-    margin-bottom: 20px;
-  }
-  
-  /* Make sure the signup panel scrolls */
-  #signupPanel {
-    overflow-y: visible;
-    min-height: 100%;
-  }
-}
-
-/* For desktop - ensure proper scrolling within the frame */
-@media (min-width: 768px) {
-  .auth-container {
-    max-height: 85vh;
-    overflow-y: auto;
-  }
-  
-  .form-panel {
-    padding: 28px 28px 36px;
-    overflow-y: visible;
-  }
-}
-
-/* Ensure the signup form is fully scrollable */
-#signupPanel {
-  overflow-y: auto;
-  max-height: 100%;
-}
-
-/* Fix for the main layout cutting off top content */
-.phoneFrame {
-  overflow: hidden;
-  position: relative;
-}
-
-.pageContainer {
-  overflow-y: auto;
-  overflow-x: hidden;
-  height: 100%;
-  padding: 0;
-  scroll-behavior: smooth;
-}
-
-/* Ensure first element in page container is visible */
-.pageContainer > :first-child {
-  margin-top: 0;
-  padding-top: 0;
-}
-
-/* Fix for the profile header not being cut off */
-.profile-header {
-  margin-top: 0;
-  padding-top: 24px;
-}
-
-/* For mobile, ensure the app fills the screen without cutting off */
-@media (max-width: 767px) {
-  .app-container {
-    height: 100%;
-    border-radius: 0;
-    overflow-y: auto;
-  }
-  
-  .app-wrapper {
-    height: auto;
-    min-height: 100%;
-    padding-bottom: 20px;
-  }
-  
-  .main-content {
-    padding-bottom: 80px;
-  }
-}
-
-/* ==================== SCROLLING FIXES ==================== */
-
-/* Ensure all scrollable containers work */
-* {
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Fix for auth form scrolling */
-.auth-container {
-  max-height: 90vh;
-  overflow-y: auto;
-  margin: 0 auto;
-}
-
-@media (max-width: 767px) {
-  .auth-container {
-    max-height: 100vh;
-    height: 100%;
-    border-radius: 0;
-  }
-  
-  .form-panel {
-    overflow-y: visible;
-    padding-bottom: 40px;
-  }
-}
-
-/* Ensure signup panel is scrollable */
-#signupPanel {
-  overflow-y: visible;
-  min-height: 100%;
-}
-
-/* Make sure content doesn't get cut off at the top */
-.profile-header {
-  margin-top: 0;
-  padding-top: 24px;
-}
-
-.mainContent > *:first-child {
-  margin-top: 0;
-}
-
-/* Force scrolling on all pages */
-.phoneFrame,
-.pageContainer,
-.mainContent,
-.postsTab,
-.unitiesTab,
-.treasureTab {
-  overflow-y: auto !important;
-}
-

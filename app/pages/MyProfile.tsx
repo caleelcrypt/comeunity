@@ -437,130 +437,138 @@ const fetchFollowing = async (userId: string) => {
   // DATA FETCHING
   // ============================================
   
- const fetchProfileData = async () => {
+const fetchProfileData = async () => {
   const { data: { user: authUser } } = await supabase.auth.getUser();
+  
+  // Don't redirect - just return null if no user
   if (!authUser) {
-    router.push('/auth');
+    console.error('No user found in fetchProfileData');
     return null;
   }
+  
   const { data: profileData } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", authUser.id)
     .single();
+    
   if (profileData) {
     setProfile(profileData);
-    setCurrentAvatar(profileData.avatar || '😎');  // ← This also uses the setter
+    setCurrentAvatar(profileData.avatar || '😎');
   }
+  
   return profileData;
 };
-  const fetchAllData = async () => {
-    setLoading(true);
-    
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (!authUser) {
-      router.push('/auth');
-      return;
-    }
-    
-    // 1. Fetch profile
-    const profileData = await fetchProfileData();
-    
-    // 2. Fetch owned avatars
-    const { data: avatarsData } = await supabase
-      .from("user_avatars")
-      .select("avatar_emoji")
-      .eq("user_id", authUser.id);
-    
-    if (avatarsData && avatarsData.length > 0) {
-      setOwnedAvatars(avatarsData.map(a => a.avatar_emoji));
-    } else {
-      setOwnedAvatars(['😎']);
-    }
-    
-    // 3. Fetch posts
-    const { data: postsData } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("user_id", authUser.id)
-      .order("created_at", { ascending: false });
-    if (postsData) setPosts(postsData);
-    
-    // 4. Fetch unities
-    const { data: unitiesData } = await supabase
-      .from("user_unities")
-      .select("*")
-      .eq("user_id", authUser.id);
-    if (unitiesData) {
-      const formattedUnities = unitiesData.map(u => ({
-        ...u,
-        tag: u.unity_name === 'Digital Artists' ? 'founder' as const : 'contributor' as const,
-        members: 12400
-      }));
-      setUnities(formattedUnities);
-    }
-    
-    // 5. Fetch transactions
-    const { data: transactionsData } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("user_id", authUser.id)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    
-    if (transactionsData) {
-      setTransactions(transactionsData.map(t => ({
-        ...t,
-        date: t.created_at || new Date().toISOString()
-      })));
-    } else {
-      setTransactions([]);
-    }
-    
-    // 6. Fetch followers and following
-    if (authUser.id) {
-      await Promise.all([
-        fetchFollowers(authUser.id),
-        fetchFollowing(authUser.id)
-      ]);
-    }
-    
-    // 7. Fetch referral stats
-    await fetchReferralStats();
-    
-    // 8. Fetch tips data
-    await fetchTipsData(authUser.id);
-    
-    // 9. Fetch badges
-    await fetchBadges();
-    
-    // 10. Set referral code from profile
-    if (profileData && profileData.own_referral_code) {
-      setReferralCode(profileData.own_referral_code);
-      setReferralInvites(profileData.referral_invites || 0);
-      setReferralXPEarned(profileData.referral_xp_earned || 0);
-    }
-    
-    // 11. Generate achievements as fallback
-    const allAchievements = generateAllAchievements(
-      profileData,
-      postsData?.length || 0,
-      avatarsData?.length || 1,
-      referralInvites,
-      tipsGiven,
-      tipsReceived,
-      unitiesData?.length || 0,
-      reportsSubmitted
-    );
-    
-    // 12. Only use fallback if badges array is empty
-    if (badges.length === 0) {
-      setBadges(allAchievements);
-    }
-    
-    setLoading(false);
-  };
+
+const fetchAllData = async () => {
+  setLoading(true);
   
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  
+  // If no user, show error but don't redirect - the parent route handles auth
+  if (!authUser) {
+    console.error('No authenticated user found');
+    setLoading(false);
+    return;
+  }
+  
+  // 1. Fetch profile
+  const profileData = await fetchProfileData();
+  
+  // 2. Fetch owned avatars
+  const { data: avatarsData } = await supabase
+    .from("user_avatars")
+    .select("avatar_emoji")
+    .eq("user_id", authUser.id);
+  
+  if (avatarsData && avatarsData.length > 0) {
+    setOwnedAvatars(avatarsData.map(a => a.avatar_emoji));
+  } else {
+    setOwnedAvatars(['😎']);
+  }
+  
+  // 3. Fetch posts
+  const { data: postsData } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("user_id", authUser.id)
+    .order("created_at", { ascending: false });
+  if (postsData) setPosts(postsData);
+  
+  // 4. Fetch unities
+  const { data: unitiesData } = await supabase
+    .from("user_unities")
+    .select("*")
+    .eq("user_id", authUser.id);
+  if (unitiesData) {
+    const formattedUnities = unitiesData.map(u => ({
+      ...u,
+      tag: u.unity_name === 'Digital Artists' ? 'founder' as const : 'contributor' as const,
+      members: 12400
+    }));
+    setUnities(formattedUnities);
+  }
+  
+  // 5. Fetch transactions
+  const { data: transactionsData } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", authUser.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  
+  if (transactionsData) {
+    setTransactions(transactionsData.map(t => ({
+      ...t,
+      date: t.created_at || new Date().toISOString()
+    })));
+  } else {
+    setTransactions([]);
+  }
+  
+  // 6. Fetch followers and following
+  if (authUser.id) {
+    await Promise.all([
+      fetchFollowers(authUser.id),
+      fetchFollowing(authUser.id)
+    ]);
+  }
+  
+  // 7. Fetch referral stats
+  await fetchReferralStats();
+  
+  // 8. Fetch tips data
+  await fetchTipsData(authUser.id);
+  
+  // 9. Fetch badges
+  await fetchBadges();
+  
+  // 10. Set referral code from profile
+  if (profileData && profileData.own_referral_code) {
+    setReferralCode(profileData.own_referral_code);
+    setReferralInvites(profileData.referral_invites || 0);
+    setReferralXPEarned(profileData.referral_xp_earned || 0);
+  }
+  
+  // 11. Generate achievements as fallback
+  const allAchievements = generateAllAchievements(
+    profileData,
+    postsData?.length || 0,
+    avatarsData?.length || 1,
+    referralInvites,
+    tipsGiven,
+    tipsReceived,
+    unitiesData?.length || 0,
+    reportsSubmitted
+  );
+  
+  // 12. Only use fallback if badges array is empty
+  if (badges.length === 0) {
+    setBadges(allAchievements);
+  }
+  
+  setLoading(false);
+};
   // ============================================
   // XP EARNING FUNCTION
   // ============================================

@@ -1,7 +1,7 @@
 ﻿'use client';
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-import styles from './AuthForm.module.css'; // Import CSS Module
+import styles from './AuthForm.module.css';
 
 // --- Types ---
 type UserProfile = {
@@ -45,16 +45,36 @@ const AuthForm: React.FC = () => {
     referral: false
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loginPasswordValid, setLoginPasswordValid] = useState(false);
+  const [loginEmailValid, setLoginEmailValid] = useState(false);
 
   // --- Helper Functions ---
-  const showToastMsg = (msg: string) => {
+  const showToastMsg = (msg: string, isSuccess: boolean = false) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 2600);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const scrollToElement = (elementId: string) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+      element.classList.add(styles.highlightField);
+      setTimeout(() => {
+        element.classList.remove(styles.highlightField);
+      }, 2000);
+    }
+  };
+
+  const showFieldError = (fieldId: string, errorMessage: string) => {
+    showToastMsg(errorMessage);
+    scrollToElement(fieldId);
   };
 
   // --- Validation Functions ---
-  const isValidUsername = (str: string) => /^[a-z0-9]{3,20}$/.test(str);
-  const isValidEmail = (email: string) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
+  const isValidUsername = (str: string) => /^[a-zA-Z0-9_]{3,20}$/.test(str);
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isPasswordStrong = (pwd: string) => {
     if (!pwd) return false;
     const lenOk = pwd.length >= 8 && pwd.length <= 16;
@@ -77,9 +97,7 @@ const AuthForm: React.FC = () => {
   const isReferralCodeValid = async (code: string): Promise<boolean> => {
     if (!code || code.trim() === "") return false;
     const trimmed = code.trim().toUpperCase();
-    
     if (trimmed === "CALEELCEO") return true;
-    
     const { data } = await supabase
       .from("profiles")
       .select("own_referral_code")
@@ -90,7 +108,6 @@ const AuthForm: React.FC = () => {
 
   const getReferrerUserByCode = async (code: string) => {
     const trimmed = code.trim().toUpperCase();
-    
     if (trimmed === "CALEELCEO") {
       const { data } = await supabase
         .from("profiles")
@@ -99,7 +116,6 @@ const AuthForm: React.FC = () => {
         .single();
       return data;
     }
-    
     const { data } = await supabase
       .from("profiles")
       .select("id, xp")
@@ -115,7 +131,6 @@ const AuthForm: React.FC = () => {
       .select("own_referral_code")
       .eq("own_referral_code", candidate)
       .single();
-    
     if (data) {
       const random = Math.floor(Math.random() * 1000);
       return `${candidate}${random}`;
@@ -123,10 +138,52 @@ const AuthForm: React.FC = () => {
     return candidate;
   };
 
+  const updatePasswordFieldColor = (password: string) => {
+    const passwordField = document.getElementById('signupPassword') as HTMLInputElement;
+    const passwordStrong = isPasswordStrong(password);
+    
+    if (passwordField && signupTouched.password) {
+      if (passwordStrong) {
+        passwordField.classList.add(styles.validField);
+        passwordField.classList.remove(styles.invalidField);
+      } else if (password) {
+        passwordField.classList.add(styles.invalidField);
+        passwordField.classList.remove(styles.validField);
+      } else {
+        passwordField.classList.remove(styles.validField, styles.invalidField);
+      }
+    }
+  };
+
+  const updateConfirmPasswordColor = (password: string, confirmPassword: string) => {
+    const confirmField = document.getElementById('signupConfirmPwd') as HTMLInputElement;
+    const confirmSuccessMsg = document.getElementById('confirmSuccessMsg');
+    const confirmErrorMsg = document.getElementById('confirmErrorMsg');
+    const passwordsMatch = password === confirmPassword && password.length > 0 && confirmPassword.length > 0;
+    
+    if (confirmField && signupTouched.confirm) {
+      if (passwordsMatch) {
+        confirmField.classList.add(styles.validField);
+        confirmField.classList.remove(styles.invalidField);
+        if (confirmSuccessMsg) confirmSuccessMsg.innerHTML = '✅ Passwords match!';
+        if (confirmErrorMsg) confirmErrorMsg.innerText = '';
+      } else if (confirmPassword) {
+        confirmField.classList.add(styles.invalidField);
+        confirmField.classList.remove(styles.validField);
+        if (confirmErrorMsg) confirmErrorMsg.innerText = '⚠️ Passwords do not match';
+        if (confirmSuccessMsg) confirmSuccessMsg.innerHTML = '';
+      } else {
+        confirmField.classList.remove(styles.validField, styles.invalidField);
+        if (confirmErrorMsg) confirmErrorMsg.innerText = '';
+        if (confirmSuccessMsg) confirmSuccessMsg.innerHTML = '';
+      }
+    }
+  };
+
   const validateAllFields = async () => {
     const firstName = signupData.firstName.trim();
     const lastName = signupData.lastName.trim();
-    const username = signupData.username.toLowerCase();
+    const username = signupData.username;
     const email = signupData.email.trim();
     const password = signupData.password;
     const confirmPwd = signupData.confirmPassword;
@@ -163,7 +220,7 @@ const AuthForm: React.FC = () => {
       } else if (!usernameFormatValid && username) {
         usernameField.classList.add(styles.invalidField);
         usernameField.classList.remove(styles.validField);
-        if (usernameErrorMsg) usernameErrorMsg.innerText = '⚠️ 3-20 lowercase letters & numbers only';
+        if (usernameErrorMsg) usernameErrorMsg.innerText = '⚠️ 3-20 letters, numbers & underscores only';
         if (usernameSuccessMsg) usernameSuccessMsg.innerHTML = '';
       }
     } else if (!signupTouched.username) {
@@ -187,9 +244,9 @@ const AuthForm: React.FC = () => {
     if (signupTouched.email && email) {
       if (emailValid) {
         if (emailErrorMsg) emailErrorMsg.innerText = '';
-        if (emailSuccessMsg) emailSuccessMsg.innerHTML = '✅ Valid Gmail address';
+        if (emailSuccessMsg) emailSuccessMsg.innerHTML = '✅ Valid email address';
       } else {
-        if (emailErrorMsg) emailErrorMsg.innerText = '⚠️ Only @gmail.com email addresses are accepted';
+        if (emailErrorMsg) emailErrorMsg.innerText = '⚠️ Please enter a valid email address';
         if (emailSuccessMsg) emailSuccessMsg.innerHTML = '';
       }
     }
@@ -197,31 +254,14 @@ const AuthForm: React.FC = () => {
     const passwordSuccessMsg = document.getElementById('passwordSuccessMsg');
     if (signupTouched.password && passwordStrong) {
       if (passwordSuccessMsg) passwordSuccessMsg.innerHTML = '✅ Strong password!';
-    } else if (signupTouched.password && !passwordStrong) {
+    } else if (signupTouched.password && !passwordStrong && signupData.password) {
       if (passwordSuccessMsg) passwordSuccessMsg.innerHTML = '';
     }
     
-    const confirmSuccessMsg = document.getElementById('confirmSuccessMsg');
-    const confirmErrorMsg = document.getElementById('confirmErrorMsg');
-    if (signupTouched.confirm && confirmValid) {
-      if (confirmSuccessMsg) confirmSuccessMsg.innerHTML = '✅ Passwords match!';
-      if (confirmErrorMsg) confirmErrorMsg.innerText = '';
-    } else if (signupTouched.confirm && !confirmValid && confirmPwd) {
-      if (confirmErrorMsg) confirmErrorMsg.innerText = '⚠️ Passwords do not match';
-    }
-    
-    const referralSuccessMsg = document.getElementById('referralSuccessMsg');
-    const referralErrorMsg = document.getElementById('referralErrorMsg');
-    if (signupTouched.referral && referralValid) {
-      if (referralSuccessMsg) referralSuccessMsg.innerHTML = '✅ Valid referral code! +50 XP bonus';
-      if (referralErrorMsg) referralErrorMsg.innerText = '';
-    } else if (signupTouched.referral && !referralValid && referralCode) {
-      if (referralErrorMsg) referralErrorMsg.innerText = '⚠️ Invalid referral code';
-    }
-    
+    updateConfirmPasswordColor(password, confirmPwd);
     updatePasswordReqs(password);
     
-    const allValid = firstNameValid && lastNameValid && usernameValid && emailValid && passwordStrong && confirmValid && referralValid;
+    const allValid = firstNameValid && lastNameValid && usernameValid && emailValid && passwordStrong && confirmValid;
     const container = document.getElementById('authContainer');
     if (allValid && container) container.classList.add(styles.formValid);
     else if (container) container.classList.remove(styles.formValid);
@@ -265,6 +305,8 @@ const AuthForm: React.FC = () => {
       if (el && el.innerHTML.includes('check-circle')) el.classList.add(styles.reqPassValid);
       else if (el) el.classList.remove(styles.reqPassValid);
     });
+    
+    updatePasswordFieldColor(password);
   };
 
   const validateLoginFields = async () => {
@@ -290,29 +332,28 @@ const AuthForm: React.FC = () => {
       if (loginEmailSuccess) loginEmailSuccess.innerHTML = '';
       if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
       if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
+      setLoginEmailValid(false);
+      setLoginPasswordValid(false);
       return;
     }
     
-    const emailRegex = /^[A-Za-z][A-Za-z0-9._%+-]*@gmail\.com$/;
-    const isValidGmailFormat = emailRegex.test(email);
-    const endsWithGmail = email.endsWith('@gmail.com');
+    const isValidEmailFormat = isValidEmail(email);
     
-    if (email && !endsWithGmail) {
-      if (loginEmailFeedback) loginEmailFeedback.innerHTML = '';
-      if (loginEmailSuccess) loginEmailSuccess.innerHTML = '✏️ Keep typing... must end with @gmail.com';
-      if (emailField) {
-        emailField.classList.remove(styles.validField, styles.invalidField);
-      }
-    } else if (email && endsWithGmail && !isValidGmailFormat) {
+    if (email && !isValidEmailFormat) {
+      if (loginEmailFeedback) loginEmailFeedback.innerHTML = '❌ Please enter a valid email address';
+      if (loginEmailSuccess) loginEmailSuccess.innerHTML = '';
       if (emailField) {
         emailField.classList.add(styles.invalidField);
         emailField.classList.remove(styles.validField);
       }
-      if (loginEmailFeedback) loginEmailFeedback.innerHTML = '❌ Email must start with a letter (no numbers or symbols at start)';
-      if (loginEmailSuccess) loginEmailSuccess.innerHTML = '';
-    } else if (email && isValidGmailFormat) {
+      setLoginEmailValid(false);
+    } else if (email && isValidEmailFormat) {
       if (loginEmailFeedback) loginEmailFeedback.innerHTML = '';
       if (loginEmailSuccess) loginEmailSuccess.innerHTML = '✓ Checking email...';
+      if (emailField) {
+        emailField.classList.remove(styles.invalidField);
+      }
+      setLoginEmailValid(true);
       
       const { data: targetUser } = await supabase
         .from("profiles")
@@ -328,7 +369,12 @@ const AuthForm: React.FC = () => {
         if (loginEmailSuccess) loginEmailSuccess.innerHTML = '✅ Email found!';
         
         if (password) {
-          if (targetUser.password === password) {
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email: email.toLowerCase(),
+            password: password,
+          });
+          
+          if (!authError && authData.user) {
             if (passwordField) {
               passwordField.classList.add(styles.validField);
               passwordField.classList.remove(styles.invalidField);
@@ -336,6 +382,7 @@ const AuthForm: React.FC = () => {
             if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
             if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '✅ Correct password!';
             if (container) container.classList.add(styles.loginValid);
+            setLoginPasswordValid(true);
           } else {
             if (passwordField) {
               passwordField.classList.add(styles.invalidField);
@@ -344,12 +391,14 @@ const AuthForm: React.FC = () => {
             if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '❌ Incorrect password';
             if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
             if (container) container.classList.remove(styles.loginValid);
+            setLoginPasswordValid(false);
           }
         } else {
           if (passwordField) passwordField.classList.remove(styles.validField, styles.invalidField);
           if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
           if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
           if (container) container.classList.remove(styles.loginValid);
+          setLoginPasswordValid(false);
         }
       } else {
         if (emailField) {
@@ -362,6 +411,8 @@ const AuthForm: React.FC = () => {
         if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
         if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
         if (container) container.classList.remove(styles.loginValid);
+        setLoginEmailValid(false);
+        setLoginPasswordValid(false);
       }
     }
   };
@@ -408,41 +459,39 @@ const AuthForm: React.FC = () => {
     }
   }, []);
 
- const fetchUserProfile = async (authUser: any) => {
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", authUser.id)
-      .single();
-    
-    if (error) {
-      // If profile not found (PGRST116 = no rows returned), it's okay
-      if (error.code === 'PGRST116') {
-        console.log("Profile not found yet. User may have just signed up.");
+  const fetchUserProfile = async (authUser: any) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", authUser.id)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log("Profile not found yet. User may have just signed up.");
+          return;
+        }
+        console.warn("Profile fetch warning:", error.message);
         return;
       }
-      // For other errors, log them but don't break the app
-      console.warn("Profile fetch warning:", error.message);
-      return;
+      
+      if (data) {
+        setUser(data as UserProfile);
+      }
+    } catch (err) {
+      console.log("Profile fetch skipped:", err);
     }
-    
-    if (data) {
-      setUser(data as UserProfile);
-    }
-  } catch (err) {
-    console.log("Profile fetch skipped:", err);
-  }
-};
+  };
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
-      showToastMsg("❌ Please enter both email and password");
+      showFieldError("loginEmail", "❌ Please enter both email and password");
       return;
     }
     
-    if (!loginEmail.endsWith('@gmail.com') || !isValidEmail(loginEmail)) {
-      showToastMsg("❌ Only @gmail.com email addresses are allowed");
+    if (!isValidEmail(loginEmail)) {
+      showFieldError("loginEmail", "❌ Please enter a valid email address");
       return;
     }
     
@@ -454,10 +503,12 @@ const AuthForm: React.FC = () => {
     setLoading(false);
     
     if (error) {
-      showToastMsg(`❌ ${error.message}`);
+      showFieldError("loginPassword", `❌ ${error.message}`);
     } else if (data.user) {
-      showToastMsg(`✨ Welcome back!`);
-      window.location.href = '/feed';
+      showToastMsg(`✨ Welcome back! ✨`, true);
+      setTimeout(() => {
+        window.location.href = '/feed';
+      }, 1000);
     }
   };
 
@@ -468,7 +519,30 @@ const AuthForm: React.FC = () => {
     
     const isValid = await validateAllFields();
     if (!isValid) {
-      showToastMsg("❌ Please fix all fields before signing up");
+      const firstName = signupData.firstName.trim();
+      const lastName = signupData.lastName.trim();
+      const username = signupData.username;
+      const email = signupData.email.trim();
+      const password = signupData.password;
+      const confirmPwd = signupData.confirmPassword;
+      
+      if (!firstName || firstName.length < 2) {
+        showFieldError("firstName", "❌ First name is required (minimum 2 characters)");
+      } else if (!lastName || lastName.length < 2) {
+        showFieldError("lastName", "❌ Last name is required (minimum 2 characters)");
+      } else if (!isValidUsername(username)) {
+        showFieldError("username", "❌ Username must be 3-20 letters, numbers & underscores only");
+      } else if (username && await checkUsernameAvailability(username)) {
+        showFieldError("username", "❌ Username already taken");
+      } else if (!isValidEmail(email)) {
+        showFieldError("signupEmail", "❌ Please enter a valid email address");
+      } else if (!isPasswordStrong(password)) {
+        showFieldError("signupPassword", "❌ Password must be 8-16 chars with a letter, number & special character");
+      } else if (password !== confirmPwd) {
+        showFieldError("signupConfirmPwd", "❌ Passwords do not match");
+      } else {
+        showToastMsg("❌ Please fix all fields before signing up");
+      }
       return;
     }
     
@@ -480,14 +554,14 @@ const AuthForm: React.FC = () => {
       .eq("email", signupData.email)
       .single();
     if (existingUser) {
-      showToastMsg("❌ Email already registered");
+      showFieldError("signupEmail", "❌ Email already registered");
       setLoading(false);
       return;
     }
     
     const usernameTaken = await checkUsernameAvailability(signupData.username);
     if (usernameTaken) {
-      showToastMsg("❌ Username already taken");
+      showFieldError("username", "❌ Username already taken");
       setLoading(false);
       return;
     }
@@ -507,7 +581,7 @@ const AuthForm: React.FC = () => {
     });
     
     if (signUpError) {
-      showToastMsg(`❌ Signup failed: ${signUpError.message}`);
+      showFieldError("signupEmail", `❌ Signup failed: ${signUpError.message}`);
       setLoading(false);
       return;
     }
@@ -527,24 +601,16 @@ const AuthForm: React.FC = () => {
       full_name: `${signupData.firstName} ${signupData.lastName}`,
       username: signupData.username,
       email: signupData.email,
-      xp: referrer ? 50 : 50,
+      xp: referrer ? 100 : 50,
       own_referral_code: ownReferralCode,
       referred_by: referrer?.id || null,
     };
-    
-    console.log("Attempting to create profile with data:", newProfile);
     
     const { error: profileError } = await supabase
       .from("profiles")
       .insert([newProfile]);
     if (profileError) {
-      console.error("Profile creation error - Full details:", {
-        message: profileError.message,
-        code: profileError.code,
-        details: profileError.details,
-        hint: profileError.hint,
-        data: profileError
-      });
+      console.error("Profile creation error:", profileError);
       showToastMsg(`❌ Profile creation failed: ${profileError.message}`);
       setLoading(false);
       return;
@@ -555,16 +621,16 @@ const AuthForm: React.FC = () => {
         .from("profiles")
         .update({ xp: (referrer.xp || 0) + 50 })
         .eq("id", referrer.id);
-      
-      await supabase
-        .from("profiles")
-        .update({ xp: 100 })
-        .eq("id", authData.user.id);
     }
     
-    showToastMsg(`🎉 Welcome ${signupData.firstName}! +${referrer ? 100 : 50} XP earned.`);
+    const xpAmount = referrer ? 100 : 50;
+    showToastMsg(`🎉 Welcome ${signupData.firstName}! 🎉\nYou earned ${xpAmount} XP! ✨`, true);
+    
     setLoading(false);
-    window.location.href = '/feed';
+    
+    setTimeout(() => {
+      window.location.href = '/feed';
+    }, 1500);
   };
 
   const handleLogout = async () => {
@@ -660,15 +726,20 @@ const AuthForm: React.FC = () => {
   }, [user]);
 
   const handleInputChange = (field: string, value: string) => {
-    if (field === "username") {
-      value = value.toLowerCase().replace(/[^a-z0-9]/g, '');
-    }
     setSignupData(prev => ({ ...prev, [field]: value }));
     setSignupTouched(prev => ({ ...prev, [field]: true }));
+    
+    // Update confirm password color in real-time
+    if (field === 'password' || field === 'confirmPassword') {
+      const newPassword = field === 'password' ? value : signupData.password;
+      const newConfirm = field === 'confirmPassword' ? value : signupData.confirmPassword;
+      updateConfirmPasswordColor(newPassword, newConfirm);
+    }
+    
     validateAllFields();
   };
 
-  // Dashboard render
+  // Dashboard render (if user is logged in)
   if (user) {
     return (
       <>
@@ -739,7 +810,7 @@ const AuthForm: React.FC = () => {
         {activeTab === "login" && (
           <div className={styles.formPanel}>
             <div className={styles.inputField}>
-              <label><i className="far fa-envelope"></i> Email address (@gmail.com only)</label>
+              <label><i className="far fa-envelope"></i> Email address</label>
               <input 
                 type="email" 
                 id="loginEmail" 
@@ -783,8 +854,17 @@ const AuthForm: React.FC = () => {
               <div className={styles.fieldErrorMsg} id="loginPasswordFeedback"></div>
               <div className={styles.fieldSuccessMsg} id="loginPasswordSuccess"></div>
             </div>
-            <button className={styles.btnPrimary} onClick={handleLogin} disabled={loading}>Welcome back →</button>
-            <div className={styles.demoWarning}>✨ Sign in with your Gmail address</div>
+            <button 
+              className={styles.btnPrimary} 
+              onClick={handleLogin} 
+              disabled={loading}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              {loading ? 'Loading...' : 'Welcome back →'}
+            </button>
+            <div className={styles.demoWarning}>✨ Sign in to continue your journey</div>
           </div>
         )}
 
@@ -815,7 +895,7 @@ const AuthForm: React.FC = () => {
             </div>
             
             <div className={`${styles.inputField} ${styles.usernamePrefix}`}>
-              <label>Username <span style={{ color: "#ff7b9c" }}>(lowercase letters & numbers, 3-20 chars)</span></label>
+              <label>Username <span style={{ color: "#ff7b9c" }}>(letters, numbers & underscores, 3-20 chars)</span></label>
               <div style={{ position: "relative" }}>
                 <span className={styles.atSymbol}>@</span>
                 <input 
@@ -832,7 +912,7 @@ const AuthForm: React.FC = () => {
             </div>
             
             <div className={styles.inputField}>
-              <label>Email address <span style={{ color: "#ff7b9c" }}>(only @gmail.com allowed)</span></label>
+              <label>Email address</label>
               <input 
                 type="email" 
                 id="signupEmail" 
@@ -846,13 +926,32 @@ const AuthForm: React.FC = () => {
             
             <div className={styles.inputField}>
               <label>Password (8-16 chars, letter + number + special character)</label>
-              <input 
-                type="password" 
-                id="signupPassword" 
-                placeholder="••••••••"
-                value={signupData.password}
-                onChange={(e) => handleInputChange("password", e.target.value)}
-              />
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  id="signupPassword" 
+                  placeholder="••••••••"
+                  value={signupData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  style={{ paddingRight: '40px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '15px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ff7b9c',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <i className={showPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
+                </button>
+              </div>
               <div className={styles.passwordRequirements} id="pwdReqs">
                 <span className={styles.reqPass} id="lengthReq"><i className="fas fa-circle"></i> 8-16 chars</span>
                 <span className={styles.reqPass} id="letterReq"><i className="fas fa-circle"></i> Letter</span>
@@ -863,19 +962,38 @@ const AuthForm: React.FC = () => {
             </div>
             <div className={styles.inputField}>
               <label>Confirm password</label>
-              <input 
-                type="password" 
-                id="signupConfirmPwd" 
-                placeholder="confirm"
-                value={signupData.confirmPassword}
-                onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-              />
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showConfirmPassword ? "text" : "password"} 
+                  id="signupConfirmPwd" 
+                  placeholder="confirm"
+                  value={signupData.confirmPassword}
+                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                  style={{ paddingRight: '40px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '15px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ff7b9c',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <i className={showConfirmPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
+                </button>
+              </div>
               <div className={styles.fieldErrorMsg} id="confirmErrorMsg"></div>
               <div className={styles.fieldSuccessMsg} id="confirmSuccessMsg"></div>
             </div>
 
             <div className={styles.inputField}>
-              <label><i className="fas fa-gift"></i> Referral code <span style={{ color: "#ff7b9c" }}>*</span></label>
+              <label><i className="fas fa-gift"></i> Referral code <span style={{ color: "#ff7b9c" }}>(optional)</span></label>
               <input 
                 type="text" 
                 id="referralCodeInput" 
@@ -890,12 +1008,25 @@ const AuthForm: React.FC = () => {
               <div className={styles.fieldSuccessMsg} id="referralSuccessMsg"></div>
             </div>
             
-            <button className={styles.btnPrimary} onClick={handleSignup} disabled={loading}>Find your People →</button>
+            <button 
+              className={styles.btnPrimary} 
+              onClick={handleSignup} 
+              disabled={loading}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              {loading ? 'Creating Account...' : 'Find your People →'}
+            </button>
             <div className={styles.demoWarning}>⭐ Each referral gives you +50 XP & referrer +50 XP</div>
           </div>
         )}
       </div>
-      {toast && <div className={styles.toastMsg}>{toast}</div>}
+      {toast && (
+        <div className={`${styles.toastMsg} ${toast.includes('🎉') || toast.includes('✨') ? styles.successToast : ''}`}>
+          {toast}
+        </div>
+      )}
     </>
   );
 };

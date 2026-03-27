@@ -1,17 +1,22 @@
 /* BottomNav.module.css */
 
 .bottomNav {
-  position: relative;
-  width: 100%;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 500px;
+  margin: 0 auto;
   background: rgba(10, 10, 15, 0.95);
   backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 77, 109, 0.2);
-  padding: 8px 24px 18px;
+  padding: 8px 16px 18px;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
-  z-index: 100;
+  z-index: 1000;
   flex-shrink: 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .navItem {
@@ -26,17 +31,32 @@
   padding: 4px 0;
   flex: 1;
   border: none;
+  background: transparent;
+  max-width: 80px;
 }
 
 .navItem i {
-  font-size: 22px;
+  font-size: 24px;
   transition: all 0.3s ease;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .navItem span {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   transition: all 0.3s ease;
+}
+
+.navItem:hover {
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+}
+
+.navItem:hover i {
+  background: linear-gradient(135deg, #ff6b6b, #a259ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .navItem.active {
@@ -87,6 +107,35 @@
 .navItem:active {
   transform: scale(0.92);
   transition: transform 0.1s ease-out;
+}
+
+/* Responsive - Full width on mobile, phone frame on desktop */
+@media (max-width: 500px) {
+  .bottomNav {
+    max-width: 100%;
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .bottomNav {
+    padding: 6px 12px 14px;
+  }
+  
+  .navItem i {
+    font-size: 22px;
+  }
+  
+  .navItem span {
+    font-size: 10px;
+  }
+  
+  .navItem.active::after {
+    width: 24px;
+    height: 2px;
+    bottom: -4px;
+  }
 }
 
 /* Remove any separators */

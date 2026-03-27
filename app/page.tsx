@@ -1,69 +1,48 @@
-'use client'
-
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import LandingPage from './components/Landing/LandingPage';
-import AuthForm from './components/Auth/AuthForm';
+﻿'use client';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabaseClient';
+import LandingPage from './components/Landing/LandingPage';
+import FeedPage from './pages/Feed';
 
-// Dynamically import components
-const MainLayout = dynamic(() => import('./components/Navigation/MainLayout'), { ssr: false });
-const PublicProfilePage = dynamic(() => import('./pages/PublicProfile'), { ssr: false });
-
-export default function Page() {
-  const pathname = usePathname();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isClient, setIsClient] = useState(false);
+export default function HomePage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    setIsClient(true);
-    
-    const checkAuth = async () => {
+    const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+      setUser(session?.user || null);
+      setLoading(false);
     };
-    
-    checkAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-    });
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+    checkUser();
   }, []);
 
-  if (!isClient || isAuthenticated === null) {
+  // Handle redirect after loading
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        router.push('/feed');
+      }
+    }
+  }, [loading, user, router]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-pink-800 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: '#0a0a0f'
+      }}>
+        <div className="loading-spinner"></div>
       </div>
     );
   }
 
-  // Root path - show landing page
-  if (pathname === '/') {
-    return <LandingPage />;
-  }
-
-  // Auth path - show auth form
-  if (pathname === '/auth') {
-    return <AuthForm />;
-  }
-
-  // Feed, unities, and profile/me are all protected routes
-  if (isAuthenticated) {
-    // /profile/me and /profile/username are both handled by MainLayout
-    // MainLayout will determine which profile page to show
-    return <MainLayout />;
-  }
-
-  // If not authenticated and trying to access protected route, redirect to landing
-  if (typeof window !== 'undefined') {
-    window.location.href = '/';
-  }
-  
+  // If not logged in, show landing page
   return <LandingPage />;
 }

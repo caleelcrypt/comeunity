@@ -11,7 +11,6 @@ export default function LandingPage() {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [showRatingModal, setShowRatingModal] = useState(false);
-  const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [reviewText, setReviewText] = useState('');
   const [creatorCount, setCreatorCount] = useState(1234);
   const [toast, setToast] = useState<string | null>(null);
@@ -37,17 +36,6 @@ export default function LandingPage() {
       localStorage.setItem('comeunity_referral', refCode);
     }
   }, [searchParams]);
-
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.push('/feed');
-      }
-    };
-    checkAuth();
-  }, [router]);
 
   // Animate creator count
   useEffect(() => {
@@ -111,11 +99,6 @@ export default function LandingPage() {
     setCreatorCount(prev => prev + 1);
   };
 
-  const showNotification = (message: string) => {
-    showToastMessage(message);
-    setShowDropdown(false);
-  };
-
   // Navigate to legal pages
   const navigateToGuidelines = () => {
     router.push('/legal/guidelines');
@@ -151,100 +134,108 @@ export default function LandingPage() {
     <div className={styles.landingPage}>
       <div className={styles.landingContainer}>
         <div className={styles.landingWrapper}>
-          {/* Header with Menu Button */}
-          <div className={styles.landingHeader}>
-            <div id="landingMenuBtn" className={styles.menuBtn} onClick={() => setShowDropdown(!showDropdown)}>
-              <i className="fas fa-ellipsis-v"></i>
-            </div>
-            <div id="landingDropdown" className={`${styles.dropdown} ${showDropdown ? styles.dropdownOpen : ''}`}>
-              <div className={styles.dropdownItem} onClick={navigateToGuidelines}>
-                <i className="fas fa-handshake"></i>
-                <span>ComeUnity Guidelines</span>
+          {/* Fixed Header Section */}
+          <div className={styles.fixedHeader}>
+            {/* Menu Button */}
+            <div className={styles.landingHeader}>
+              <div id="landingMenuBtn" className={styles.menuBtn} onClick={() => setShowDropdown(!showDropdown)}>
+                <i className="fas fa-ellipsis-v"></i>
               </div>
-              <div className={styles.dropdownItem} onClick={navigateToPrivacy}>
-                <i className="fas fa-shield-alt"></i>
-                <span>Privacy Policy</span>
-              </div>
-              <div className={styles.dropdownItem} onClick={navigateToTerms}>
-                <i className="fas fa-file-contract"></i>
-                <span>Terms of Service</span>
-              </div>
-              <div className={styles.dropdownDivider}></div>
-              <div className={styles.dropdownItem} onClick={openReviewModal}>
-                <i className="fas fa-star"></i>
-                <span>Leave a Review</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Logo Section */}
-          <div className={styles.logoSection}>
-            <div className={styles.logo}>
-              <span>COME</span><span>UNITY</span>
-            </div>
-            <div className={styles.tagline}>The Home for Creators</div>
-          </div>
-
-          {/* Trending Card */}
-          <div className={styles.trendingCard}>
-            <div className={styles.cardHeader}>
-              <i className="fas fa-fire"></i>
-              <span>Trending Creators</span>
-            </div>
-            <div className={styles.trendingList}>
-              {trendingCreators.map((creator, index) => (
-                <div key={index} className={styles.trendingItem} onClick={() => showToastMessage(`Viewing @${creator.username}'s profile`)}>
-                  <div className={styles.trendingIcon}>{creator.icon}</div>
-                  <div className={styles.trendingInfo}>
-                    <div className={styles.trendingTitle}>{creator.username}</div>
-                    <div className={styles.trendingMeta}>{creator.icon === '🎨' ? 'Artist' : creator.icon === '🎬' ? 'Music' : 'Leaderboard'}</div>
-                  </div>
-                  <div className={styles.trendingValue}>{creator.views ? `+${creator.views} views` : creator.likes ? `${creator.likes} likes` : `🔥 ${creator.xp} XP`}</div>
+              <div id="landingDropdown" className={`${styles.dropdown} ${showDropdown ? styles.dropdownOpen : ''}`}>
+                <div className={styles.dropdownItem} onClick={navigateToGuidelines}>
+                  <i className="fas fa-handshake"></i>
+                  <span>ComeUnity Guidelines</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Leaderboard Card */}
-          <div className={styles.leaderboardCard}>
-            <div className={styles.cardHeader}>
-              <i className="fas fa-trophy"></i>
-              <span>Top Unities This Week</span>
-            </div>
-            <div className={styles.leaderboardList}>
-              {leaderboard.map((item, index) => (
-                <div key={index} className={styles.leaderboardItem} onClick={() => showToastMessage(`Viewing ${item.name}`)}>
-                  <div className={styles.rankNumber}>{index + 1}</div>
-                  <div className={styles.rankAvatar}>{item.icon}</div>
-                  <div className={styles.rankInfo}>
-                    <div className={styles.rankName}>{item.name}</div>
-                    <div className={styles.rankStats}>{item.members} Units • {item.online} online</div>
-                  </div>
-                  <div className={styles.rankXp}>{item.xp} XP</div>
+                <div className={styles.dropdownItem} onClick={navigateToPrivacy}>
+                  <i className="fas fa-shield-alt"></i>
+                  <span>Privacy Policy</span>
                 </div>
-              ))}
+                <div className={styles.dropdownItem} onClick={navigateToTerms}>
+                  <i className="fas fa-file-contract"></i>
+                  <span>Terms of Service</span>
+                </div>
+                <div className={styles.dropdownDivider}></div>
+                <div className={styles.dropdownItem} onClick={openReviewModal}>
+                  <i className="fas fa-star"></i>
+                  <span>Leave a Review</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Logo Section */}
+            <div className={styles.logoSection}>
+              <div className={styles.logo}>
+                <span>COME</span><span>UNITY</span>
+              </div>
+              <div className={styles.tagline}>The Home for Creators</div>
             </div>
           </div>
 
-          {/* Auth Section */}
-          <div className={styles.authSection}>
-            <div className={styles.authButtons}>
-              <button className={`${styles.authBtn} ${styles.loginBtn}`} onClick={handleLogin}>
-                <i className="fas fa-sign-in-alt"></i> Log In
-              </button>
-              <button className={`${styles.authBtn} ${styles.signupBtn}`} onClick={handleSignUp}>
-                <i className="fas fa-user-plus"></i> Sign Up
-              </button>
+          {/* Scrollable Middle Content */}
+          <div className={styles.scrollableContent}>
+            {/* Trending Card */}
+            <div className={styles.trendingCard}>
+              <div className={styles.cardHeader}>
+                <i className="fas fa-fire"></i>
+                <span>Trending Creators</span>
+              </div>
+              <div className={styles.trendingList}>
+                {trendingCreators.map((creator, index) => (
+                  <div key={index} className={styles.trendingItem} onClick={() => showToastMessage(`Viewing @${creator.username}'s profile`)}>
+                    <div className={styles.trendingIcon}>{creator.icon}</div>
+                    <div className={styles.trendingInfo}>
+                      <div className={styles.trendingTitle}>{creator.username}</div>
+                      <div className={styles.trendingMeta}>{creator.icon === '🎨' ? 'Artist' : creator.icon === '🎬' ? 'Music' : 'Leaderboard'}</div>
+                    </div>
+                    <div className={styles.trendingValue}>{creator.views ? `+${creator.views} views` : creator.likes ? `${creator.likes} likes` : `🔥 ${creator.xp} XP`}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className={styles.socialCount}>
-              <i className="fas fa-users"></i>
-              <span>Join <span className={styles.countNumber}>{creatorCount.toLocaleString()}</span> creators already here</span>
+
+            {/* Leaderboard Card */}
+            <div className={styles.leaderboardCard}>
+              <div className={styles.cardHeader}>
+                <i className="fas fa-trophy"></i>
+                <span>Top Unities This Week</span>
+              </div>
+              <div className={styles.leaderboardList}>
+                {leaderboard.map((item, index) => (
+                  <div key={index} className={styles.leaderboardItem} onClick={() => showToastMessage(`Viewing ${item.name}`)}>
+                    <div className={styles.rankNumber}>{index + 1}</div>
+                    <div className={styles.rankAvatar}>{item.icon}</div>
+                    <div className={styles.rankInfo}>
+                      <div className={styles.rankName}>{item.name}</div>
+                      <div className={styles.rankStats}>{item.members} Units • {item.online} online</div>
+                    </div>
+                    <div className={styles.rankXp}>{item.xp} XP</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Fixed Bottom Section */}
+          <div className={styles.fixedBottom}>
+            <div className={styles.authSection}>
+              <div className={styles.authButtons}>
+                <button className={`${styles.authBtn} ${styles.loginBtn}`} onClick={handleLogin}>
+                  <i className="fas fa-sign-in-alt"></i> Log In
+                </button>
+                <button className={`${styles.authBtn} ${styles.signupBtn}`} onClick={handleSignUp}>
+                  <i className="fas fa-user-plus"></i> Sign Up
+                </button>
+              </div>
+              <div className={styles.socialCount}>
+                <i className="fas fa-users"></i>
+                <span>Join <span className={styles.countNumber}>{creatorCount.toLocaleString()}</span> creators already here</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Review Modal - uses global modal styles */}
+      {/* Review Modal */}
       <div className={`modal ${showRatingModal ? 'show' : ''}`}>
         <div className="modal-content">
           <div className="modal-header">
