@@ -511,40 +511,23 @@ export default function MyProfilePage() {
   // DATA FETCHING
   // ============================================
   
-  const fetchProfileData = async () => {
-  console.log('🔵 fetchProfileData: Starting');
-  
+const fetchProfileData = async () => {
   const { data: { user: authUser } } = await supabase.auth.getUser();
   
   if (!authUser) {
-    console.error('🔴 fetchProfileData: No user found');
+    console.error('No user found in fetchProfileData');
     return null;
   }
   
-  console.log('🔵 fetchProfileData: User ID:', authUser.id);
-  
-  const { data: profileData, error } = await supabase
+  const { data: profileData } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", authUser.id)
     .single();
-  
-  if (error) {
-    console.error('🔴 fetchProfileData: Error fetching profile:', error);
-    return null;
-  }
-  
-  console.log('🔵 fetchProfileData: Profile data received:', profileData);
-  console.log('🔵 fetchProfileData: Username:', profileData?.username);
-  console.log('🔵 fetchProfileData: Coins:', profileData?.coins);
-  console.log('🔵 fetchProfileData: XP:', profileData?.xp);
     
   if (profileData) {
     setProfile(profileData);
-    setCurrentAvatar(profileData.avatar || '😎');
-    console.log('🔵 fetchProfileData: Profile state updated');
-  } else {
-    console.error('🔴 fetchProfileData: No profile data returned');
+    setCurrentAvatar(profileData.avatar || '😎');  // ← This uses setCurrentAvatar
   }
   
   return profileData;
@@ -803,22 +786,22 @@ const fetchAllData = async () => {
   
   const handleOpenAvatarShop = () => setShowAvatarShop(true);
   
-  const handleSelectAvatar = async (emoji: string) => {
-    if (!profile) return;
-    
-    if (ownedAvatars.includes(emoji)) {
-      setCurrentAvatar(emoji);
-      await supabase
-        .from("profiles")
-        .update({ avatar: emoji })
-        .eq("id", profile.id);
-      setProfile({ ...profile, avatar: emoji });
-      setShowAvatarShop(false);
-      showToastMessage(`Avatar changed to ${emoji}!`);
-    } else {
-      showToastMessage("You don't own this avatar yet!");
-    }
-  };
+ const handleSelectAvatar = async (emoji: string) => {
+  if (!profile) return;
+  
+  if (ownedAvatars.includes(emoji)) {
+    setCurrentAvatar(emoji);  // ← This should now work
+    await supabase
+      .from("profiles")
+      .update({ avatar: emoji })
+      .eq("id", profile.id);
+    setProfile({ ...profile, avatar: emoji });
+    setShowAvatarShop(false);
+    showToastMessage(`Avatar changed to ${emoji}!`);
+  } else {
+    showToastMessage("You don't own this avatar yet!");
+  }
+};
   
   const handlePurchaseAvatar = (avatar: { emoji: string; price: number; name: string }) => {
     if (ownedAvatars.includes(avatar.emoji)) {

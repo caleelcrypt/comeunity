@@ -147,9 +147,10 @@ export const checkDailyLogin = async (userId: string): Promise<DailyLoginResult>
       streakMessage,
       message
     };
-    
-  } catch (error) {
-    console.error('Error checking daily login:', error);
-    return { claimed: false, error: error.message };
-  }
+ // lib/dailyLogin.ts
+} catch (error) {
+  console.error('Error checking daily login:', error);
+  const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+  return { claimed: false, error: errorMessage };
+} 
 };
