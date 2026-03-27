@@ -10,20 +10,44 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
-      setLoading(false);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          if (isMounted) {
+            setUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+        
+        if (isMounted) {
+          setUser(session?.user || null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        if (isMounted) {
+          setUser(null);
+          setLoading(false);
+        }
+      }
     };
 
     checkUser();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        router.push('/feed');
-      }
+    if (!loading && user) {
+      router.push('/feed');
     }
   }, [loading, user, router]);
 

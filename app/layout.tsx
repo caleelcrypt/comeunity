@@ -1,5 +1,8 @@
 ﻿import MainLayout from './components/Navigation/MainLayout';
 import './globals.css';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({
   children,
@@ -14,7 +17,7 @@ export default function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
         />
       </head>
-      <body>
+      <body className={inter.className}>
         <MainLayout>
           {children}
         </MainLayout>

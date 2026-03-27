@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import styles from './AuthForm.module.css';
 
-// --- Types ---
+// Update your UserProfile type to include the coins field
 type UserProfile = {
   id: string;
   first_name: string;
@@ -12,10 +12,12 @@ type UserProfile = {
   username: string;
   email: string;
   xp: number;
+  coins: number;  // ← Add this line
   own_referral_code: string;
   referred_by: string | null;
   created_at: string;
 };
+ 
 
 // --- Main Auth Component ---
 const AuthForm: React.FC = () => {
@@ -31,6 +33,9 @@ const AuthForm: React.FC = () => {
     confirmPassword: "",
     referralCode: "",
   });
+
+  
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -111,14 +116,14 @@ const AuthForm: React.FC = () => {
     if (trimmed === "CALEELCEO") {
       const { data } = await supabase
         .from("profiles")
-        .select("id, xp")
-        .eq("username", "caleel_ceo")
+        .select("id, xp, username")
+        .eq("username", "caleelceo")
         .single();
       return data;
     }
     const { data } = await supabase
       .from("profiles")
-      .select("id, xp")
+      .select("id, xp, username")
       .eq("own_referral_code", trimmed)
       .single();
     return data;
@@ -461,6 +466,8 @@ const AuthForm: React.FC = () => {
 
   const fetchUserProfile = async (authUser: any) => {
     try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -470,7 +477,17 @@ const AuthForm: React.FC = () => {
       if (error) {
         if (error.code === 'PGRST116') {
           console.log("Profile not found yet. User may have just signed up.");
-          return;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data: retryData, error: retryError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", authUser.id)
+            .single();
+          
+          if (retryData) {
+            setUser(retryData as UserProfile);
+            return;
+          }
         }
         console.warn("Profile fetch warning:", error.message);
         return;
@@ -513,124 +530,161 @@ const AuthForm: React.FC = () => {
   };
 
   const handleSignup = async () => {
+    // Validate fields first
     const newTouched = { ...signupTouched };
     Object.keys(newTouched).forEach(k => newTouched[k as keyof typeof newTouched] = true);
     setSignupTouched(newTouched);
     
     const isValid = await validateAllFields();
     if (!isValid) {
-      const firstName = signupData.firstName.trim();
-      const lastName = signupData.lastName.trim();
-      const username = signupData.username;
-      const email = signupData.email.trim();
-      const password = signupData.password;
-      const confirmPwd = signupData.confirmPassword;
-      
-      if (!firstName || firstName.length < 2) {
-        showFieldError("firstName", "❌ First name is required (minimum 2 characters)");
-      } else if (!lastName || lastName.length < 2) {
-        showFieldError("lastName", "❌ Last name is required (minimum 2 characters)");
-      } else if (!isValidUsername(username)) {
-        showFieldError("username", "❌ Username must be 3-20 letters, numbers & underscores only");
-      } else if (username && await checkUsernameAvailability(username)) {
-        showFieldError("username", "❌ Username already taken");
-      } else if (!isValidEmail(email)) {
-        showFieldError("signupEmail", "❌ Please enter a valid email address");
-      } else if (!isPasswordStrong(password)) {
-        showFieldError("signupPassword", "❌ Password must be 8-16 chars with a letter, number & special character");
-      } else if (password !== confirmPwd) {
-        showFieldError("signupConfirmPwd", "❌ Passwords do not match");
-      } else {
-        showToastMsg("❌ Please fix all fields before signing up");
-      }
+      setLoading(false);
       return;
     }
     
     setLoading(true);
     
-    const { data: existingUser } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("email", signupData.email)
-      .single();
-    if (existingUser) {
-      showFieldError("signupEmail", "❌ Email already registered");
-      setLoading(false);
-      return;
-    }
-    
-    const usernameTaken = await checkUsernameAvailability(signupData.username);
-    if (usernameTaken) {
-      showFieldError("username", "❌ Username already taken");
-      setLoading(false);
-      return;
-    }
-    
-    const referrer = await getReferrerUserByCode(signupData.referralCode);
-    
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email: signupData.email,
-      password: signupData.password,
-      options: {
-        data: {
+    try {
+      // Get referrer if referral code provided
+      let referrerInfo = null;
+      if (signupData.referralCode) {
+        referrerInfo = await getReferrerUserByCode(signupData.referralCode);
+        console.log("Referrer found:", referrerInfo);
+      }
+      
+      // Sign up with Supabase Auth
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: signupData.email,
+        password: signupData.password,
+        options: {
+          data: {
+            first_name: signupData.firstName,
+            last_name: signupData.lastName,
+            username: signupData.username,
+          }
+        }
+      });
+      
+      if (signUpError) {
+        console.error("Signup error:", signUpError);
+        showFieldError("signupEmail", `❌ ${signUpError.message}`);
+        setLoading(false);
+        return;
+      }
+      
+      if (!authData.user) {
+        showToastMsg("❌ Signup failed, please try again");
+        setLoading(false);
+        return;
+      }
+      
+      console.log("✅ User created. User ID:", authData.user.id);
+      
+      // Generate referral code for new user
+      const ownReferralCode = await generateUniqueReferralCode(signupData.username);
+      
+      // Calculate XP (50 base + 50 referral bonus if applicable)
+      const totalXP = referrerInfo ? 100 : 50;
+      
+      // Create profile with ALL required fields
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          id: authData.user.id,
           first_name: signupData.firstName,
           last_name: signupData.lastName,
+          full_name: `${signupData.firstName} ${signupData.lastName}`,
           username: signupData.username,
+          email: signupData.email,
+          xp: totalXP,
+          coins: 0,
+          own_referral_code: ownReferralCode,
+          referred_by: referrerInfo?.id || null,
+          avatar: '😎',
+          category: 'Art',
+          verification_level: 'creator',
+          streak: 0,
+          longest_streak: 0,
+          total_streak_xp: 0,
+          followers_count: 0,
+          following_count: 0,
+          likes_given: 0,
+          referral_invites: 0,
+          referral_xp_earned: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        showToastMsg(`❌ Profile creation failed: ${profileError.message}`);
+        setLoading(false);
+        return;
+      }
+      
+      console.log("✅ Profile created successfully");
+      
+      // Award referrer bonus if applicable
+      if (referrerInfo) {
+        console.log("🎁 Awarding referrer bonus to:", referrerInfo.id);
+        
+        // Update referrer's XP and referral stats
+        const { data: referrerProfile } = await supabase
+          .from("profiles")
+          .select("xp, referral_invites, referral_xp_earned")
+          .eq("id", referrerInfo.id)
+          .single();
+        
+        if (referrerProfile) {
+          await supabase
+            .from("profiles")
+            .update({
+              xp: (referrerProfile.xp || 0) + 50,
+              referral_invites: (referrerProfile.referral_invites || 0) + 1,
+              referral_xp_earned: (referrerProfile.referral_xp_earned || 0) + 50
+            })
+            .eq("id", referrerInfo.id);
+          
+          // Create transaction for referrer
+          await supabase
+            .from("transactions")
+            .insert({
+              user_id: referrerInfo.id,
+              type: 'Referral Bonus',
+              amount: 0,
+              metadata: {
+                xp_gained: 50,
+                referred_user: authData.user.id,
+                referred_username: signupData.username
+              }
+            });
         }
       }
-    });
-    
-    if (signUpError) {
-      showFieldError("signupEmail", `❌ Signup failed: ${signUpError.message}`);
-      setLoading(false);
-      return;
-    }
-    
-    if (!authData.user) {
-      showToastMsg("❌ Signup failed, please try again");
-      setLoading(false);
-      return;
-    }
-    
-    const ownReferralCode = await generateUniqueReferralCode(signupData.username);
-    
-    const newProfile = {
-      id: authData.user.id,
-      first_name: signupData.firstName,
-      last_name: signupData.lastName,
-      full_name: `${signupData.firstName} ${signupData.lastName}`,
-      username: signupData.username,
-      email: signupData.email,
-      xp: referrer ? 100 : 50,
-      own_referral_code: ownReferralCode,
-      referred_by: referrer?.id || null,
-    };
-    
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert([newProfile]);
-    if (profileError) {
-      console.error("Profile creation error:", profileError);
-      showToastMsg(`❌ Profile creation failed: ${profileError.message}`);
-      setLoading(false);
-      return;
-    }
-    
-    if (referrer) {
+      
+      // Create welcome transaction for new user
       await supabase
-        .from("profiles")
-        .update({ xp: (referrer.xp || 0) + 50 })
-        .eq("id", referrer.id);
+        .from("transactions")
+        .insert({
+          user_id: authData.user.id,
+          type: 'Welcome Bonus',
+          amount: 0,
+          metadata: { xp_gained: totalXP }
+        });
+      
+      const xpMessage = referrerInfo ? `100 XP (50 base + 50 referral bonus)` : `50 XP`;
+      showToastMsg(`🎉 Welcome ${signupData.firstName}! 🎉\nYou earned ${xpMessage}! ✨`, true);
+      
+      setLoading(false);
+      
+      // Redirect to feed after short delay
+      setTimeout(() => {
+        window.location.href = '/feed';
+      }, 1500);
+      
+    } catch (error) {
+      console.error("❌ Signup error:", error);
+      showToastMsg(`❌ Signup error: ${error.message}`);
+      setLoading(false);
     }
-    
-    const xpAmount = referrer ? 100 : 50;
-    showToastMsg(`🎉 Welcome ${signupData.firstName}! 🎉\nYou earned ${xpAmount} XP! ✨`, true);
-    
-    setLoading(false);
-    
-    setTimeout(() => {
-      window.location.href = '/feed';
-    }, 1500);
   };
 
   const handleLogout = async () => {
@@ -729,7 +783,6 @@ const AuthForm: React.FC = () => {
     setSignupData(prev => ({ ...prev, [field]: value }));
     setSignupTouched(prev => ({ ...prev, [field]: true }));
     
-    // Update confirm password color in real-time
     if (field === 'password' || field === 'confirmPassword') {
       const newPassword = field === 'password' ? value : signupData.password;
       const newConfirm = field === 'confirmPassword' ? value : signupData.confirmPassword;

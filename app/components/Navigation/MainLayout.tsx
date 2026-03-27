@@ -11,6 +11,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Define public routes that don't require authentication
+  const publicRoutes = ['/auth', '/publicprofile', '/public-profile-test', '/test-users'];
+  const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
+
   useEffect(() => {
     // Update current page based on pathname
     if (pathname === '/feed') setCurrentPage(0);
@@ -27,10 +31,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     checkUser();
   }, []);
 
-  // Only show bottom nav on feed, unities, and profile pages, and only if user is logged in
-  const showBottomNav = (pathname === '/feed' || pathname === '/unities' || pathname === '/profile') && user;
+  // Only show bottom nav on authenticated pages
+  const showBottomNav = !isPublicRoute && user && (pathname === '/feed' || pathname === '/unities' || pathname === '/profile');
 
-  if (loading) {
+  if (loading && !isPublicRoute) {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.spinner}></div>
@@ -41,7 +45,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className={styles.container}>
       <div className={styles.contentWrapper}>
-        <main className={styles.main}>
+        <main className={styles.main} style={{ paddingTop: 0, marginTop: 0 }}>
           {children}
         </main>
         
