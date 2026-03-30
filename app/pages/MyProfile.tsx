@@ -793,11 +793,12 @@ const fetchAllData = async () => {
   
   const handleOpenAvatarShop = () => setShowAvatarShop(true);
   
- const handleSelectAvatar = async (emoji: string) => {
+// Uncomment and fix handleSelectAvatar
+const handleSelectAvatar = async (emoji: string) => {
   if (!profile) return;
   
   if (ownedAvatars.includes(emoji)) {
-    setCurrentAvatar(emoji);  // ← This should now work
+    setCurrentAvatar(emoji);
     await supabase
       .from("profiles")
       .update({ avatar: emoji })
@@ -810,14 +811,16 @@ const fetchAllData = async () => {
   }
 };
   
-  const handlePurchaseAvatar = (avatar: { emoji: string; price: number; name: string }) => {
-    if (ownedAvatars.includes(avatar.emoji)) {
+ const handlePurchaseAvatar = (avatar: { emoji: string; price: number; name: string }) => {
+  if (ownedAvatars.includes(avatar.emoji)) {
+    if (typeof handleSelectAvatar === 'function') {
       handleSelectAvatar(avatar.emoji);
-      return;
     }
-    setPendingPurchase(avatar);
-    setShowConfirmModal(true);
-  };
+    return;
+  }
+  setPendingPurchase(avatar);
+  setShowConfirmModal(true);
+};
   
   const handleConfirmPurchase = async () => {
     if (!profile || !pendingPurchase) return;
