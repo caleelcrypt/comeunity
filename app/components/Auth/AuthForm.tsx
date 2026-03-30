@@ -12,12 +12,11 @@ type UserProfile = {
   username: string;
   email: string;
   xp: number;
-  coins: number;  // ← Add this line
+  coins: number;
   own_referral_code: string;
   referred_by: string | null;
   created_at: string;
 };
- 
 
 // --- Main Auth Component ---
 const AuthForm: React.FC = () => {
@@ -33,8 +32,6 @@ const AuthForm: React.FC = () => {
     confirmPassword: "",
     referralCode: "",
   });
-
-  
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -53,6 +50,40 @@ const AuthForm: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loginPasswordValid, setLoginPasswordValid] = useState(false);
   const [loginEmailValid, setLoginEmailValid] = useState(false);
+
+  // ========== JWT AUTO-REFRESH HANDLING ==========
+  useEffect(() => {
+    // Check and refresh session on mount
+    const refreshSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error && error.message === 'JWT expired') {
+        console.log('Token expired, refreshing...');
+        const { data, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('Failed to refresh token:', refreshError);
+        } else {
+          console.log('Token refreshed successfully');
+        }
+      }
+    };
+    
+    refreshSession();
+    
+    // Auto-refresh token every 50 minutes
+    const interval = setInterval(async () => {
+      console.log('Auto-refreshing session...');
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Auto-refresh failed:', error);
+      } else {
+        console.log('Session auto-refreshed');
+      }
+    }, 50 * 60 * 1000); // 50 minutes
+    
+    return () => clearInterval(interval);
+  }, []);
+  // ========== END JWT AUTO-REFRESH ==========
 
   // --- Helper Functions ---
   const showToastMsg = (msg: string, isSuccess: boolean = false) => {
@@ -314,114 +345,92 @@ const AuthForm: React.FC = () => {
     updatePasswordFieldColor(password);
   };
 
-  const validateLoginFields = async () => {
-    const email = loginEmail.trim();
-    const password = loginPassword;
-    const emailField = document.getElementById('loginEmail');
-    const passwordField = document.getElementById('loginPassword');
-    const container = document.getElementById('authContainer');
-    const loginEmailFeedback = document.getElementById('loginEmailFeedback');
-    const loginEmailSuccess = document.getElementById('loginEmailSuccess');
-    const loginPasswordFeedback = document.getElementById('loginPasswordFeedback');
-    const loginPasswordSuccess = document.getElementById('loginPasswordSuccess');
-    
-    if (password && loginPasswordFeedback && loginPasswordFeedback.innerHTML.includes('Incorrect')) {
-      loginPasswordFeedback.innerHTML = '';
+ const validateLoginFields = async () => {
+  const email = loginEmail.trim();
+  const password = loginPassword;
+  const emailField = document.getElementById('loginEmail');
+  const passwordField = document.getElementById('loginPassword');
+  const loginEmailFeedback = document.getElementById('loginEmailFeedback');
+  const loginEmailSuccess = document.getElementById('loginEmailSuccess');
+  const loginPasswordFeedback = document.getElementById('loginPasswordFeedback');
+  const loginPasswordSuccess = document.getElementById('loginPasswordSuccess');
+  
+  // Reset styles when no input
+  if (!email && !password) {
+    if (emailField) emailField.classList.remove('validField', 'invalidField');
+    if (passwordField) passwordField.classList.remove('validField', 'invalidField');
+    if (loginEmailFeedback) loginEmailFeedback.innerHTML = '';
+    if (loginEmailSuccess) loginEmailSuccess.innerHTML = '';
+    if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
+    if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
+    setLoginEmailValid(false);
+    setLoginPasswordValid(false);
+    return;
+  }
+  
+  // Validate email format
+  const isValidEmailFormat = isValidEmail(email);
+  
+  if (email && !isValidEmailFormat) {
+    if (loginEmailFeedback) loginEmailFeedback.innerHTML = '❌ Please enter a valid email address';
+    if (loginEmailSuccess) loginEmailSuccess.innerHTML = '';
+    if (emailField) {
+      emailField.classList.add('invalidField');
+      emailField.classList.remove('validField');
     }
+    setLoginEmailValid(false);
+  } else if (email && isValidEmailFormat) {
+    if (loginEmailFeedback) loginEmailFeedback.innerHTML = '';
+    if (loginEmailSuccess) loginEmailSuccess.innerHTML = '✓ Checking email...';
+    if (emailField) {
+      emailField.classList.remove('invalidField');
+    }
+    setLoginEmailValid(true);
     
-    if (!email) {
-      if (emailField) emailField.classList.remove(styles.validField, styles.invalidField);
-      if (passwordField) passwordField.classList.remove(styles.validField, styles.invalidField);
-      if (container) container.classList.remove(styles.loginValid);
-      if (loginEmailFeedback) loginEmailFeedback.innerHTML = '';
+    // Check if email exists
+    const { data: targetUser, error } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+    
+    if (targetUser) {
+      if (emailField) {
+        emailField.classList.add('validField');
+        emailField.classList.remove('invalidField');
+      }
+      if (loginEmailSuccess) loginEmailSuccess.innerHTML = '✅ Email found!';
+      
+      // Now check if password is entered
+      if (password && password.length > 0) {
+        // We don't check password correctness here - that happens on submit
+        // Just show that password is entered
+        if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
+        if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '✓ Password entered (click below to verify)';
+        if (passwordField) {
+          passwordField.classList.add('validField');
+          passwordField.classList.remove('invalidField');
+        }
+        setLoginPasswordValid(true);
+      } else if (password && password.length === 0) {
+        if (passwordField) passwordField.classList.remove('validField', 'invalidField');
+        if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
+        setLoginPasswordValid(false);
+      }
+    } else {
+      if (emailField) {
+        emailField.classList.add('invalidField');
+        emailField.classList.remove('validField');
+      }
+      if (loginEmailFeedback) loginEmailFeedback.innerHTML = '❌ Email not found. Please sign up first.';
       if (loginEmailSuccess) loginEmailSuccess.innerHTML = '';
-      if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
+      if (passwordField) passwordField.classList.remove('validField', 'invalidField');
       if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
       setLoginEmailValid(false);
       setLoginPasswordValid(false);
-      return;
     }
-    
-    const isValidEmailFormat = isValidEmail(email);
-    
-    if (email && !isValidEmailFormat) {
-      if (loginEmailFeedback) loginEmailFeedback.innerHTML = '❌ Please enter a valid email address';
-      if (loginEmailSuccess) loginEmailSuccess.innerHTML = '';
-      if (emailField) {
-        emailField.classList.add(styles.invalidField);
-        emailField.classList.remove(styles.validField);
-      }
-      setLoginEmailValid(false);
-    } else if (email && isValidEmailFormat) {
-      if (loginEmailFeedback) loginEmailFeedback.innerHTML = '';
-      if (loginEmailSuccess) loginEmailSuccess.innerHTML = '✓ Checking email...';
-      if (emailField) {
-        emailField.classList.remove(styles.invalidField);
-      }
-      setLoginEmailValid(true);
-      
-      const { data: targetUser } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("email", email.toLowerCase())
-        .single();
-      
-      if (targetUser) {
-        if (emailField) {
-          emailField.classList.add(styles.validField);
-          emailField.classList.remove(styles.invalidField);
-        }
-        if (loginEmailSuccess) loginEmailSuccess.innerHTML = '✅ Email found!';
-        
-        if (password) {
-          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            email: email.toLowerCase(),
-            password: password,
-          });
-          
-          if (!authError && authData.user) {
-            if (passwordField) {
-              passwordField.classList.add(styles.validField);
-              passwordField.classList.remove(styles.invalidField);
-            }
-            if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
-            if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '✅ Correct password!';
-            if (container) container.classList.add(styles.loginValid);
-            setLoginPasswordValid(true);
-          } else {
-            if (passwordField) {
-              passwordField.classList.add(styles.invalidField);
-              passwordField.classList.remove(styles.validField);
-            }
-            if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '❌ Incorrect password';
-            if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
-            if (container) container.classList.remove(styles.loginValid);
-            setLoginPasswordValid(false);
-          }
-        } else {
-          if (passwordField) passwordField.classList.remove(styles.validField, styles.invalidField);
-          if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
-          if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
-          if (container) container.classList.remove(styles.loginValid);
-          setLoginPasswordValid(false);
-        }
-      } else {
-        if (emailField) {
-          emailField.classList.add(styles.invalidField);
-          emailField.classList.remove(styles.validField);
-        }
-        if (loginEmailFeedback) loginEmailFeedback.innerHTML = '❌ Email not found. Please sign up first.';
-        if (loginEmailSuccess) loginEmailSuccess.innerHTML = '';
-        if (passwordField) passwordField.classList.remove(styles.validField, styles.invalidField);
-        if (loginPasswordFeedback) loginPasswordFeedback.innerHTML = '';
-        if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
-        if (container) container.classList.remove(styles.loginValid);
-        setLoginEmailValid(false);
-        setLoginPasswordValid(false);
-      }
-    }
-  };
-
+  }
+};
   // --- Supabase Auth Logic ---
   useEffect(() => {
     updateReferralHelper();
@@ -501,34 +510,90 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  const handleLogin = async () => {
-    if (!loginEmail || !loginPassword) {
-      showFieldError("loginEmail", "❌ Please enter both email and password");
+ const handleLogin = async () => {
+  // Validate email and password are not empty
+  if (!loginEmail || !loginPassword) {
+    showFieldError("loginEmail", "❌ Please enter both email and password");
+    return;
+  }
+  
+  if (!isValidEmail(loginEmail)) {
+    showFieldError("loginEmail", "❌ Please enter a valid email address");
+    return;
+  }
+  
+  setLoading(true);
+  
+  try {
+    // First, check if user exists with this email
+    const { data: userExists, error: userError } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("email", loginEmail.toLowerCase())
+      .single();
+    
+    if (userError || !userExists) {
+      showFieldError("loginEmail", "❌ Email not found. Please sign up first.");
+      setLoading(false);
       return;
     }
     
-    if (!isValidEmail(loginEmail)) {
-      showFieldError("loginEmail", "❌ Please enter a valid email address");
-      return;
+    // Show checking message
+    const loginPasswordSuccess = document.getElementById('loginPasswordSuccess');
+    if (loginPasswordSuccess) {
+      loginPasswordSuccess.innerHTML = '✓ Checking password...';
     }
     
-    setLoading(true);
+    // Attempt login
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
+      email: loginEmail.toLowerCase(),
       password: loginPassword,
     });
-    setLoading(false);
     
     if (error) {
-      showFieldError("loginPassword", `❌ ${error.message}`);
-    } else if (data.user) {
+      console.error("Login error:", error);
+      
+      // Handle specific error messages
+      if (error.message === "Invalid login credentials") {
+        showFieldError("loginPassword", "❌ Incorrect password. Please try again.");
+        // Clear the success message
+        if (loginPasswordSuccess) loginPasswordSuccess.innerHTML = '';
+      } else if (error.message.includes("Email not confirmed")) {
+        showFieldError("loginEmail", "❌ Please confirm your email first.");
+      } else {
+        showFieldError("loginPassword", `❌ ${error.message}`);
+      }
+      setLoading(false);
+      return;
+    }
+    
+    if (data.user) {
+      // Show success message for correct password
+      const loginPasswordSuccess = document.getElementById('loginPasswordSuccess');
+      if (loginPasswordSuccess) {
+        loginPasswordSuccess.innerHTML = '✅ Correct password!';
+      }
+      
+      // Add green border to password field
+      const passwordField = document.getElementById('loginPassword');
+      if (passwordField) {
+        passwordField.classList.add('validField');
+        passwordField.classList.remove('invalidField');
+      }
+      
+      // Show welcome toast and redirect
       showToastMsg(`✨ Welcome back! ✨`, true);
       setTimeout(() => {
         window.location.href = '/feed';
       }, 1000);
     }
-  };
-
+  } catch (err) {
+    console.error("Login error:", err);
+    showFieldError("loginPassword", "❌ An error occurred. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
   const handleSignup = async () => {
     // Validate fields first
     const newTouched = { ...signupTouched };
@@ -681,10 +746,10 @@ const AuthForm: React.FC = () => {
       }, 1500);
       
     } catch (error) {
-  console.error("❌ Signup error:", error);
-  showToastMsg(`❌ Signup error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  setLoading(false);
-}
+      console.error("❌ Signup error:", error);
+      showToastMsg(`❌ Signup error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -836,252 +901,254 @@ const AuthForm: React.FC = () => {
     );
   }
 
-  // Auth form render
+  // Auth form render - wrapped in centered container
   return (
-    <>
-      <div className={styles.authContainer} id="authContainer">
-        <div className={styles.brandHeader}>
-          <div className={styles.brandLogo}>COMEUNITY</div>
-          <div className={styles.brandTagline}>Create.Connect.Collab.</div>
-        </div>
-        <div className={styles.tabs}>
-          <button 
-            className={`${styles.tabBtn} ${activeTab === "login" ? styles.tabBtnActive : ""}`} 
-            onClick={() => switchPanel("login")}
-          >
-            Log in
-          </button>
-          <button 
-            className={`${styles.tabBtn} ${activeTab === "signup" ? styles.tabBtnActive : ""}`} 
-            onClick={() => switchPanel("signup")}
-          >
-            Sign up
-          </button>
-        </div>
-
-        {/* LOGIN PANEL */}
-        {activeTab === "login" && (
-          <div className={styles.formPanel}>
-            <div className={styles.inputField}>
-              <label><i className="far fa-envelope"></i> Email address</label>
-              <input 
-                type="email" 
-                id="loginEmail" 
-                placeholder="caleel@gmail.com" 
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                onInput={validateLoginFields}
-              />
-              <div className={styles.fieldErrorMsg} id="loginEmailFeedback"></div>
-              <div className={styles.fieldSuccessMsg} id="loginEmailSuccess"></div>
-            </div>
-            <div className={styles.inputField}>
-              <label><i className="fas fa-lock"></i> Password</label>
-              <div style={{ position: 'relative' }}>
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  id="loginPassword" 
-                  placeholder="••••••••"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  onInput={validateLoginFields}
-                  style={{ paddingRight: '40px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '15px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ff7b9c',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <i className={showPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
-                </button>
-              </div>
-              <div className={styles.fieldErrorMsg} id="loginPasswordFeedback"></div>
-              <div className={styles.fieldSuccessMsg} id="loginPasswordSuccess"></div>
-            </div>
-            <button 
-              className={styles.btnPrimary} 
-              onClick={handleLogin} 
-              disabled={loading}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              {loading ? 'Loading...' : 'Welcome back →'}
-            </button>
-            <div className={styles.demoWarning}>✨ Sign in to continue your journey</div>
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className={styles.authContainer} id="authContainer">
+          <div className={styles.brandHeader}>
+            <div className={styles.brandLogo}>COMEUNITY</div>
+            <div className={styles.brandTagline}>Create.Connect.Collab.</div>
           </div>
-        )}
+          <div className={styles.tabs}>
+            <button 
+              className={`${styles.tabBtn} ${activeTab === "login" ? styles.tabBtnActive : ""}`} 
+              onClick={() => switchPanel("login")}
+            >
+              Log in
+            </button>
+            <button 
+              className={`${styles.tabBtn} ${activeTab === "signup" ? styles.tabBtnActive : ""}`} 
+              onClick={() => switchPanel("signup")}
+            >
+              Sign up
+            </button>
+          </div>
 
-        {/* SIGNUP PANEL */}
-        {activeTab === "signup" && (
-          <div className={styles.formPanel}>
-            <div className={styles.inputField}>
-              <label>First name</label>
-              <input 
-                type="text" 
-                id="firstName" 
-                placeholder="CALEEL"
-                value={signupData.firstName}
-                onChange={(e) => handleInputChange("firstName", e.target.value)}
-              />
-              <div className={styles.fieldErrorMsg} id="firstNameError"></div>
+          {/* LOGIN PANEL */}
+          {activeTab === "login" && (
+            <div className={styles.formPanel}>
+              <div className={styles.inputField}>
+                <label><i className="far fa-envelope"></i> Email address</label>
+                <input 
+                  type="email" 
+                  id="loginEmail" 
+                  placeholder="caleel@gmail.com" 
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  onInput={validateLoginFields}
+                />
+                <div className={styles.fieldErrorMsg} id="loginEmailFeedback"></div>
+                <div className={styles.fieldSuccessMsg} id="loginEmailSuccess"></div>
+              </div>
+              <div className={styles.inputField}>
+                <label><i className="fas fa-lock"></i> Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    id="loginPassword" 
+                    placeholder="••••••••"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    onInput={validateLoginFields}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ff7b9c',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <i className={showPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
+                  </button>
+                </div>
+                <div className={styles.fieldErrorMsg} id="loginPasswordFeedback"></div>
+                <div className={styles.fieldSuccessMsg} id="loginPasswordSuccess"></div>
+              </div>
+              <button 
+                className={styles.btnPrimary} 
+                onClick={handleLogin} 
+                disabled={loading}
+                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {loading ? 'Loading...' : 'Welcome back →'}
+              </button>
+              <div className={styles.demoWarning}>✨ Sign in to continue your journey</div>
             </div>
-            <div className={styles.inputField}>
-              <label>Last name</label>
-              <input 
-                type="text" 
-                id="lastName" 
-                placeholder="CEO"
-                value={signupData.lastName}
-                onChange={(e) => handleInputChange("lastName", e.target.value)}
-              />
-              <div className={styles.fieldErrorMsg} id="lastNameError"></div>
-            </div>
-            
-            <div className={`${styles.inputField} ${styles.usernamePrefix}`}>
-              <label>Username <span style={{ color: "#ff7b9c" }}>(letters, numbers & underscores, 3-20 chars)</span></label>
-              <div style={{ position: "relative" }}>
-                <span className={styles.atSymbol}>@</span>
+          )}
+
+          {/* SIGNUP PANEL */}
+          {activeTab === "signup" && (
+            <div className={styles.formPanel}>
+              <div className={styles.inputField}>
+                <label>First name</label>
                 <input 
                   type="text" 
-                  id="username" 
-                  placeholder="caleel_ceo" 
-                  style={{ paddingLeft: "48px" }}
-                  value={signupData.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
+                  id="firstName" 
+                  placeholder="CALEEL"
+                  value={signupData.firstName}
+                  onChange={(e) => handleInputChange("firstName", e.target.value)}
                 />
+                <div className={styles.fieldErrorMsg} id="firstNameError"></div>
               </div>
-              <div className={styles.fieldErrorMsg} id="usernameErrorMsg"></div>
-              <div className={styles.fieldSuccessMsg} id="usernameSuccessMsg"></div>
-            </div>
-            
-            <div className={styles.inputField}>
-              <label>Email address</label>
-              <input 
-                type="email" 
-                id="signupEmail" 
-                placeholder="caleel@gmail.com"
-                value={signupData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-              />
-              <div className={styles.fieldErrorMsg} id="emailErrorMsg"></div>
-              <div className={styles.fieldSuccessMsg} id="emailSuccessMsg"></div>
-            </div>
-            
-            <div className={styles.inputField}>
-              <label>Password (8-16 chars, letter + number + special character)</label>
-              <div style={{ position: 'relative' }}>
+              <div className={styles.inputField}>
+                <label>Last name</label>
                 <input 
-                  type={showPassword ? "text" : "password"} 
-                  id="signupPassword" 
-                  placeholder="••••••••"
-                  value={signupData.password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
-                  style={{ paddingRight: '40px' }}
+                  type="text" 
+                  id="lastName" 
+                  placeholder="CEO"
+                  value={signupData.lastName}
+                  onChange={(e) => handleInputChange("lastName", e.target.value)}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '15px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ff7b9c',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <i className={showPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
-                </button>
+                <div className={styles.fieldErrorMsg} id="lastNameError"></div>
               </div>
-              <div className={styles.passwordRequirements} id="pwdReqs">
-                <span className={styles.reqPass} id="lengthReq"><i className="fas fa-circle"></i> 8-16 chars</span>
-                <span className={styles.reqPass} id="letterReq"><i className="fas fa-circle"></i> Letter</span>
-                <span className={styles.reqPass} id="numberReq"><i className="fas fa-circle"></i> Number</span>
-                <span className={styles.reqPass} id="specialReq"><i className="fas fa-circle"></i> Special (!@#$%^&*)</span>
+              
+              <div className={`${styles.inputField} ${styles.usernamePrefix}`}>
+                <label>Username <span style={{ color: "#ff7b9c" }}>(letters, numbers & underscores, 3-20 chars)</span></label>
+                <div style={{ position: "relative" }}>
+                  <span className={styles.atSymbol}>@</span>
+                  <input 
+                    type="text" 
+                    id="username" 
+                    placeholder="caleel_ceo" 
+                    style={{ paddingLeft: "48px" }}
+                    value={signupData.username}
+                    onChange={(e) => handleInputChange("username", e.target.value)}
+                  />
+                </div>
+                <div className={styles.fieldErrorMsg} id="usernameErrorMsg"></div>
+                <div className={styles.fieldSuccessMsg} id="usernameSuccessMsg"></div>
               </div>
-              <div className={styles.fieldSuccessMsg} id="passwordSuccessMsg"></div>
-            </div>
-            <div className={styles.inputField}>
-              <label>Confirm password</label>
-              <div style={{ position: 'relative' }}>
+              
+              <div className={styles.inputField}>
+                <label>Email address</label>
                 <input 
-                  type={showConfirmPassword ? "text" : "password"} 
-                  id="signupConfirmPwd" 
-                  placeholder="confirm"
-                  value={signupData.confirmPassword}
-                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                  style={{ paddingRight: '40px' }}
+                  type="email" 
+                  id="signupEmail" 
+                  placeholder="caleel@gmail.com"
+                  value={signupData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '15px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ff7b9c',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <i className={showConfirmPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
-                </button>
+                <div className={styles.fieldErrorMsg} id="emailErrorMsg"></div>
+                <div className={styles.fieldSuccessMsg} id="emailSuccessMsg"></div>
               </div>
-              <div className={styles.fieldErrorMsg} id="confirmErrorMsg"></div>
-              <div className={styles.fieldSuccessMsg} id="confirmSuccessMsg"></div>
-            </div>
+              
+              <div className={styles.inputField}>
+                <label>Password (8-16 chars, letter + number + special character)</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    id="signupPassword" 
+                    placeholder="••••••••"
+                    value={signupData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ff7b9c',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <i className={showPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
+                  </button>
+                </div>
+                <div className={styles.passwordRequirements} id="pwdReqs">
+                  <span className={styles.reqPass} id="lengthReq"><i className="fas fa-circle"></i> 8-16 chars</span>
+                  <span className={styles.reqPass} id="letterReq"><i className="fas fa-circle"></i> Letter</span>
+                  <span className={styles.reqPass} id="numberReq"><i className="fas fa-circle"></i> Number</span>
+                  <span className={styles.reqPass} id="specialReq"><i className="fas fa-circle"></i> Special (!@#$%^&*)</span>
+                </div>
+                <div className={styles.fieldSuccessMsg} id="passwordSuccessMsg"></div>
+              </div>
+              <div className={styles.inputField}>
+                <label>Confirm password</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    id="signupConfirmPwd" 
+                    placeholder="confirm"
+                    value={signupData.confirmPassword}
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ff7b9c',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <i className={showConfirmPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
+                  </button>
+                </div>
+                <div className={styles.fieldErrorMsg} id="confirmErrorMsg"></div>
+                <div className={styles.fieldSuccessMsg} id="confirmSuccessMsg"></div>
+              </div>
 
-            <div className={styles.inputField}>
-              <label><i className="fas fa-gift"></i> Referral code <span style={{ color: "#ff7b9c" }}>(optional)</span></label>
-              <input 
-                type="text" 
-                id="referralCodeInput" 
-                placeholder="Enter referral code (e.g., COMEUNITY2026)"
-                value={signupData.referralCode}
-                onChange={(e) => handleInputChange("referralCode", e.target.value)}
-                readOnly={referralLocked}
-                className={referralLocked ? styles.readonlyRef : ""}
-              />
-              <div className={styles.referralHint} id="referralHintContainer"></div>
-              <div className={styles.fieldErrorMsg} id="referralErrorMsg"></div>
-              <div className={styles.fieldSuccessMsg} id="referralSuccessMsg"></div>
+              <div className={styles.inputField}>
+                <label><i className="fas fa-gift"></i> Referral code <span style={{ color: "#ff7b9c" }}>(optional)</span></label>
+                <input 
+                  type="text" 
+                  id="referralCodeInput" 
+                  placeholder="Enter referral code (e.g., COMEUNITY2026)"
+                  value={signupData.referralCode}
+                  onChange={(e) => handleInputChange("referralCode", e.target.value)}
+                  readOnly={referralLocked}
+                  className={referralLocked ? styles.readonlyRef : ""}
+                />
+                <div className={styles.referralHint} id="referralHintContainer"></div>
+                <div className={styles.fieldErrorMsg} id="referralErrorMsg"></div>
+                <div className={styles.fieldSuccessMsg} id="referralSuccessMsg"></div>
+              </div>
+              
+              <button 
+                className={styles.btnPrimary} 
+                onClick={handleSignup} 
+                disabled={loading}
+                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {loading ? 'Creating Account...' : 'Find your People →'}
+              </button>
+              <div className={styles.demoWarning}>⭐ Each referral gives you +50 XP & referrer +50 XP</div>
             </div>
-            
-            <button 
-              className={styles.btnPrimary} 
-              onClick={handleSignup} 
-              disabled={loading}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              {loading ? 'Creating Account...' : 'Find your People →'}
-            </button>
-            <div className={styles.demoWarning}>⭐ Each referral gives you +50 XP & referrer +50 XP</div>
+          )}
+        </div>
+        {toast && (
+          <div className={`${styles.toastMsg} ${toast.includes('🎉') || toast.includes('✨') ? styles.successToast : ''}`}>
+            {toast}
           </div>
         )}
       </div>
-      {toast && (
-        <div className={`${styles.toastMsg} ${toast.includes('🎉') || toast.includes('✨') ? styles.successToast : ''}`}>
-          {toast}
-        </div>
-      )}
-    </>
+    </div>
   );
 };
 
-export default AuthForm;
+export default AuthForm; 

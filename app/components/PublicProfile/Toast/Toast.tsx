@@ -1,4 +1,5 @@
-import React from 'react';
+﻿'use client';
+import React, { useEffect, useState } from 'react';
 
 interface ToastProps {
   title: string;
@@ -7,12 +8,34 @@ interface ToastProps {
   isError?: boolean;
 }
 
-const Toast: React.FC<ToastProps> = ({ title, message, xpGain, isError }) => {
+const Toast: React.FC<ToastProps> = ({ title, message, xpGain, isError = false }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isVisible) return null;
+
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[10002] animate-slideUp">
-      <div className={`${isError ? 'bg-red-500' : 'bg-gradient-to-r from-[#ff4d6d] to-[#b5179e] to-[#4361ee]'} px-6 py-3 rounded-full text-white text-sm font-medium shadow-lg`}>
-        <span className="font-semibold">{title}:</span> {message}
-        {xpGain && <span className="ml-2 text-yellow-300 font-bold">+{xpGain} XP</span>}
+    <div className={`toast-notification ${isVisible ? 'show' : ''}`}>
+      <div className="toast-content">
+        <div className="toast-icon" style={{ background: isError ? '#ff4757' : 'linear-gradient(135deg, var(--gradient-1), var(--gradient-3))' }}>
+          {isError ? '⚠️' : '💖'}
+        </div>
+        <div className="toast-text">
+          <div className="toast-title">{title}</div>
+          <div className="toast-message">{message}</div>
+        </div>
+        {xpGain && (
+          <div className="toast-xp">
+            <i className="fas fa-star"></i> +{xpGain} XP
+          </div>
+        )}
       </div>
     </div>
   );

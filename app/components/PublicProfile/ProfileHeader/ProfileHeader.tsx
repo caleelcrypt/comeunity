@@ -20,6 +20,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   return (
     <div className="relative bg-gradient-to-br from-[#ff4d6d]/10 to-[#4361ee]/10 border border-white/5 rounded-3xl p-6 mb-5 mt-0">
+      {/* No mt-* classes, only mb-5 for spacing below */}
       <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-r from-[#ff4d6d] to-[#4361ee] opacity-20 rounded-t-3xl"></div>
       <div className="relative z-10 flex flex-col items-center text-center">
         <div className="w-24 h-24 rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#4361ee] flex items-center justify-center text-5xl mb-3">

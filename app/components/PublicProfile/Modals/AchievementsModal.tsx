@@ -1,10 +1,13 @@
+﻿'use client';
 import React from 'react';
 
 interface Achievement {
   id: number;
   name: string;
   icon: string;
-  requirement: string;
+  description: string;
+  requirement_type: string;
+  requirement_value: number;
   unlocked: boolean;
 }
 
@@ -14,24 +17,78 @@ interface AchievementsModalProps {
   onClose: () => void;
 }
 
-const AchievementsModal: React.FC<AchievementsModalProps> = ({ isOpen, achievements, onClose }) => {
+const AchievementsModal: React.FC<AchievementsModalProps> = ({
+  isOpen,
+  achievements,
+  onClose
+}) => {
   if (!isOpen) return null;
 
+  const unlockedCount = achievements.filter(a => a.unlocked).length;
+  const lockedCount = achievements.length - unlockedCount;
+
   return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl flex items-center justify-center z-[10000]" onClick={onClose}>
-      <div className="w-[90%] max-w-[340px] bg-[#12121a] border border-[#ff4d6d]/30 rounded-3xl p-6" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-xl font-bold text-white mb-4">Achievements</h3>
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {achievements.map(achievement => (
-            <div key={achievement.id} className={`flex items-center gap-3 p-3 rounded-xl ${achievement.unlocked ? 'bg-[#ff4d6d]/10' : 'bg-white/5 opacity-60'}`}>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#ff4d6d] to-[#4361ee] flex items-center justify-center text-xl">{achievement.icon}</div>
-              <div className="flex-1">
-                <div className="font-semibold text-white text-sm">{achievement.name}</div>
-                <div className="text-xs text-white/40">{achievement.requirement}</div>
-              </div>
-              {achievement.unlocked && <i className="fas fa-check-circle text-green-400"></i>}
+    <div className={`modal ${isOpen ? 'show' : ''}`} onClick={onClose}>
+      <div className="modal-content achievements-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>🏆 Achievements</h3>
+          <span className="modal-close" onClick={onClose}>&times;</span>
+        </div>
+        <div className="modal-body">
+          <div className="achievements-stats">
+            <div className="stat-circle">
+              <span className="stat-number">{unlockedCount}</span>
+              <span className="stat-label">Unlocked</span>
             </div>
-          ))}
+            <div className="stat-divider">/</div>
+            <div className="stat-circle">
+              <span className="stat-number">{achievements.length}</span>
+              <span className="stat-label">Total</span>
+            </div>
+          </div>
+          <div className="progress-bar achievements-progress">
+            <div className="progress-fill" style={{ width: `${(unlockedCount / achievements.length) * 100}%` }}></div>
+          </div>
+          
+          <div className="achievements-list">
+            {/* Unlocked Achievements */}
+            {unlockedCount > 0 && (
+              <div className="achievement-section">
+                <h4 className="section-title unlocked-title">
+                  <i className="fas fa-trophy"></i> Unlocked ({unlockedCount})
+                </h4>
+                {achievements.filter(a => a.unlocked).map(achievement => (
+                  <div key={achievement.id} className="achievement-card unlocked">
+                    <div className="achievement-icon">{achievement.icon}</div>
+                    <div className="achievement-info">
+                      <div className="achievement-name">{achievement.name}</div>
+                      <div className="achievement-desc">{achievement.description}</div>
+                    </div>
+                    <i className="fas fa-check-circle check-icon"></i>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Locked Achievements */}
+            {lockedCount > 0 && (
+              <div className="achievement-section">
+                <h4 className="section-title locked-title">
+                  <i className="fas fa-lock"></i> Locked ({lockedCount})
+                </h4>
+                {achievements.filter(a => !a.unlocked).map(achievement => (
+                  <div key={achievement.id} className="achievement-card locked">
+                    <div className="achievement-icon locked-icon">{achievement.icon}</div>
+                    <div className="achievement-info">
+                      <div className="achievement-name">{achievement.name}</div>
+                      <div className="achievement-desc">{achievement.description}</div>
+                    </div>
+                    <i className="fas fa-lock lock-icon"></i>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

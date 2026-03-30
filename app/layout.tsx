@@ -1,4 +1,6 @@
-﻿import MainLayout from './components/Navigation/MainLayout';
+﻿'use client';
+import { usePathname } from 'next/navigation';
+import MainLayout from './components/Navigation/MainLayout';
 import './globals.css';
 import { Inter } from 'next/font/google';
 
@@ -9,6 +11,12 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  
+  // Pages that should NOT use MainLayout (no bottom nav, no extra padding)
+  const noLayoutPages = ['/auth', '/publicprofile'];
+  const useMainLayout = !noLayoutPages.includes(pathname);
+  
   return (
     <html lang="en">
       <head>
@@ -18,9 +26,15 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <MainLayout>
-          {children}
-        </MainLayout>
+        {useMainLayout ? (
+          <MainLayout>
+            {children}
+          </MainLayout>
+        ) : (
+          <div className="min-h-screen bg-[#0a0a0f]">
+            {children}
+          </div>
+        )}
       </body>
     </html>
   );
