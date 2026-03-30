@@ -16,6 +16,7 @@ interface Profile {
   username: string;
   bio: string;
   avatar: string;
+  category?: string;
   xp: number;
   coins: number;
   followers_count: number;

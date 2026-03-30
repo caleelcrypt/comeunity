@@ -1186,27 +1186,26 @@ const fetchAllData = async () => {
       onShare={handleShareReferral}
     />
     
-    <AvatarShopModal
-      isOpen={showAvatarShop}
-      onClose={() => setShowAvatarShop(false)}
-      ownedAvatars={ownedAvatars}
-      currentAvatar={currentAvatar}
-      coins={profile?.coins || 0}
-      onSelectAvatar={handleSelectAvatar}
-      onPurchase={handlePurchaseAvatar}
-    />
+    {/* <AvatarShopModal
+  isOpen={showAvatarShop}
+  onClose={() => setShowAvatarShop(false)}
+  ownedAvatars={ownedAvatars}
+  currentAvatar={currentAvatar}
+  coins={profile?.coins || 0}
+  onSelectAvatar={handleSelectAvatar}
+  onPurchase={handlePurchaseAvatar}
+/> */}
     
-              {/* Confirm Purchase Modal */}
-      <ConfirmModal
-        isOpen={showConfirmModal}
-        onClose={() => {
-          setShowConfirmModal(false);
-          setPendingPurchase(null);
-        }}
-        onConfirm={handleConfirmPurchase}
-        title="Confirm Purchase"
-        message={`Buy ${pendingPurchase?.emoji} ${pendingPurchase?.name} avatar for ${pendingPurchase?.price} coins?`}
-      />
+              {/* <ConfirmModal
+  isOpen={showConfirmModal}
+  onClose={() => {
+    setShowConfirmModal(false);
+    setPendingPurchase(null);
+  }}
+  onConfirm={handleConfirmPurchase}
+  title="Confirm Purchase"
+  message={`Buy ${pendingPurchase?.emoji} ${pendingPurchase?.name} avatar for ${pendingPurchase?.price} coins?`}
+/> */}
       
       {/* Regular Toast - for general notifications */}
       {showToast && (
