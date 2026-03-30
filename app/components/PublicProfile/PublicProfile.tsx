@@ -504,7 +504,14 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username }) => {
                 <span className="verification-badge creator">Creator</span>
               </div>
               <div className="profile-handle">@{profile.username}</div>
-              <div className="category-tag">{categoryIcons[profile.category] || '🎨'} {profile.category || 'Creator'}</div>
+              <div className="profile-handle">@{profile.username}</div>
+<div className="category-tag">
+  {profile.category && categoryIcons[profile.category as keyof typeof categoryIcons] 
+    ? categoryIcons[profile.category as keyof typeof categoryIcons] 
+    : '🎨'} 
+  {profile.category || 'Creator'}
+</div>
+<div className="profile-bio">{profile.bio || 'No bio yet'}</div>
               <div className="profile-bio">{profile.bio || 'No bio yet'}</div>
               <div className="profile-stats">
                 <div className="profile-stat" onClick={() => showToast('Followers', `${profile.followers_count.toLocaleString()} followers`)}>

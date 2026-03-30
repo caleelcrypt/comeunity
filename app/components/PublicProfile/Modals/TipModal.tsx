@@ -60,33 +60,50 @@ const TipModal: React.FC<TipModalProps> = ({
   }, [isOpen, creatorId]);
 
   const fetchRecentTips = async () => {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select(`
-        id,
-        amount,
-        message,
-        created_at,
-        sender:profiles!transactions_sender_id_fkey (
-          username,
-          first_name,
-          last_name
-        )
-      `)
-      .eq('receiver_id', creatorId)
-      .eq('type', 'tip')
-      .order('created_at', { ascending: false })
-      .limit(5);
+    try {
+      // Get recent tip transactions
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('id, amount, message, created_at, sender_id')
+        .eq('receiver_id', creatorId)
+        .eq('type', 'tip')
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-    if (!error && data) {
-      const formattedTips = data.map(tip => ({
-        id: tip.id,
-        sender_name: tip.sender?.first_name || tip.sender?.username || 'Anonymous',
-        message: tip.message || 'Sent a tip! 💖',
-        amount: tip.amount,
-        created_at: tip.created_at
-      }));
-      setRecentTips(formattedTips);
+      if (error) {
+        console.error('Error fetching recent tips:', error);
+        return;
+      }
+
+      if (transactions && transactions.length > 0) {
+        // Get sender profiles
+        const senderIds = transactions.map(t => t.sender_id).filter(id => id);
+        let senderProfiles: any[] = [];
+        
+        if (senderIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, first_name, last_name')
+            .in('id', senderIds);
+          senderProfiles = profiles || [];
+        }
+        
+        // Format the tips
+        const formattedTips = transactions.map(tip => {
+          const sender = senderProfiles.find(p => p.id === tip.sender_id);
+          return {
+            id: tip.id,
+            sender_name: sender?.first_name || sender?.username || 'Anonymous',
+            message: tip.message || 'Sent a tip! 💖',
+            amount: tip.amount,
+            created_at: tip.created_at
+          };
+        });
+        
+        setRecentTips(formattedTips);
+      }
+    } catch (error) {
+      console.error('Error in fetchRecentTips:', error);
     }
   };
 
