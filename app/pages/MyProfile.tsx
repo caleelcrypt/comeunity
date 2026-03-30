@@ -182,11 +182,18 @@ const generateAllAchievements = (profile: UserProfile | null, postsCount: number
     { id: 'obsessed', name: 'Obsessed', icon: '🔥', description: 'Create 500 posts', unlocked: postsCount >= 500, category: 'creator', rarity: 'epic' as const, xpReward: 0 },
     { id: 'legendary_creator', name: 'Legendary Creator', icon: '👑', description: 'Create 1,000 posts', unlocked: postsCount >= 1000, category: 'creator', rarity: 'legendary' as const, xpReward: 0 },
     
-    // Collector Badges
-    { id: 'new_collector', name: 'New Collector', icon: '🛍️', description: 'Buy your first avatar', unlocked: avatarCount >= 1, category: 'collector', rarity: 'common' as const, xpReward: 0 },
-    { id: 'avid_collector', name: 'Avid Collector', icon: '🌟', description: 'Own 5 avatars', unlocked: avatarCount >= 5, category: 'collector', rarity: 'rare' as const, xpReward: 0 },
-    { id: 'serious_collector', name: 'Serious Collector', icon: '💎', description: 'Own 10 avatars', unlocked: avatarCount >= 10, category: 'collector', rarity: 'rare' as const, xpReward: 0 },
-    { id: 'master_collector', name: 'Master Collector', icon: '🏆', description: 'Own 20 avatars', unlocked: avatarCount >= 20, category: 'collector', rarity: 'epic' as const, xpReward: 0 },
+    // Collector Badges (11 badges for 50 avatars)
+{ id: 'new_collector', name: 'New Collector', icon: '🛍️', description: 'Buy your first avatar', unlocked: avatarCount >= 1, category: 'collector', rarity: 'common' as const, xpReward: 25 },
+{ id: 'collector', name: 'Collector', icon: '🌟', description: 'Own 5 avatars', unlocked: avatarCount >= 5, category: 'collector', rarity: 'common' as const, xpReward: 50 },
+{ id: 'avid_collector', name: 'Avid Collector', icon: '💎', description: 'Own 10 avatars', unlocked: avatarCount >= 10, category: 'collector', rarity: 'rare' as const, xpReward: 100 },
+{ id: 'serious_collector', name: 'Serious Collector', icon: '🏆', description: 'Own 15 avatars', unlocked: avatarCount >= 15, category: 'collector', rarity: 'rare' as const, xpReward: 200 },
+{ id: 'master_collector', name: 'Master Collector', icon: '👑', description: 'Own 20 avatars', unlocked: avatarCount >= 20, category: 'collector', rarity: 'epic' as const, xpReward: 300 },
+{ id: 'rare_hunter', name: 'Rare Hunter', icon: '🦄', description: 'Own 25 avatars', unlocked: avatarCount >= 25, category: 'collector', rarity: 'epic' as const, xpReward: 400 },
+{ id: 'epic_seeker', name: 'Epic Seeker', icon: '⚡', description: 'Own 30 avatars', unlocked: avatarCount >= 30, category: 'collector', rarity: 'legendary' as const, xpReward: 500 },
+{ id: 'legend_chaser', name: 'Legend Chaser', icon: '🔥', description: 'Own 35 avatars', unlocked: avatarCount >= 35, category: 'collector', rarity: 'legendary' as const, xpReward: 750 },
+{ id: 'mythic_lord', name: 'Mythic Lord', icon: '🌌', description: 'Own 40 avatars', unlocked: avatarCount >= 40, category: 'collector', rarity: 'mythic' as const, xpReward: 1000 },
+{ id: 'completionist', name: 'Completionist', icon: '♾️', description: 'Own 45 avatars', unlocked: avatarCount >= 45, category: 'collector', rarity: 'mythic' as const, xpReward: 1500 },
+{ id: 'avatar_god', name: 'Avatar God', icon: '👑', description: 'Own ALL 50 avatars', unlocked: avatarCount >= 50, category: 'collector', rarity: 'mythic' as const, xpReward: 2500 },
     
     // Referral Badges
     { id: 'first_invite', name: 'First Invite', icon: '🤝', description: 'Invite your first friend', unlocked: referralInvites >= 1, category: 'community', rarity: 'common' as const, xpReward: 50 },
@@ -1186,7 +1193,8 @@ const fetchAllData = async () => {
       onShare={handleShareReferral}
     />
     
-    {/* <AvatarShopModal
+   {/* Avatar Shop Modal */}
+<AvatarShopModal
   isOpen={showAvatarShop}
   onClose={() => setShowAvatarShop(false)}
   ownedAvatars={ownedAvatars}
@@ -1194,9 +1202,10 @@ const fetchAllData = async () => {
   coins={profile?.coins || 0}
   onSelectAvatar={handleSelectAvatar}
   onPurchase={handlePurchaseAvatar}
-/> */}
-    
-              {/* <ConfirmModal
+/>
+
+{/* Confirm Purchase Modal */}
+<ConfirmModal
   isOpen={showConfirmModal}
   onClose={() => {
     setShowConfirmModal(false);
@@ -1205,7 +1214,7 @@ const fetchAllData = async () => {
   onConfirm={handleConfirmPurchase}
   title="Confirm Purchase"
   message={`Buy ${pendingPurchase?.emoji} ${pendingPurchase?.name} avatar for ${pendingPurchase?.price} coins?`}
-/> */}
+/>
       
       {/* Regular Toast - for general notifications */}
       {showToast && (
