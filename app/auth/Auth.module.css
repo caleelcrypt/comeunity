@@ -1,0 +1,728 @@
+/* comeunity/app/auth/Auth.module.css */
+
+/* Import global variables */
+@import url('../globals.css');
+
+/* Auth Page Container - FIXED SCROLLING */
+.authPage {
+  min-height: 100vh;
+  background: var(--bg-primary, #0a0a0f);
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: 80px; /* Space for fixed toggle buttons */
+  padding-bottom: 40px;
+}
+
+/* Background Animation */
+.bgAnimation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bgGradient {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at 20% 30%, rgba(255, 77, 109, 0.2), transparent 60%),
+              radial-gradient(ellipse at 80% 70%, rgba(181, 23, 158, 0.15), transparent 60%),
+              radial-gradient(ellipse at 40% 80%, rgba(67, 97, 238, 0.1), transparent 70%),
+              linear-gradient(135deg, #0a0a0a 0%, #0f0f1a 100%);
+}
+
+.bgNoise {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.floatingOrb {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 77, 109, 0.15), transparent 70%);
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(50px, -30px) scale(1.1); }
+  66% { transform: translate(-30px, 40px) scale(0.9); }
+}
+
+/* Auth Toggle - Fixed at top */
+.authToggle {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 100;
+  background: rgba(18, 18, 26, 0.6);
+  backdrop-filter: blur(12px);
+  border-radius: 60px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggleBtn {
+  padding: 8px 20px;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.toggleBtn.active {
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-3, #4361ee));
+  color: white;
+  box-shadow: 0 0 12px rgba(255, 77, 109, 0.3);
+}
+
+/* Main Container */
+.appContainer {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.contentWrapper {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  gap: 48px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Auth Card */
+.authCard {
+  flex: 1;
+  min-width: 320px;
+  max-width: 440px;
+  background: rgba(18, 18, 26, 0.7);
+  backdrop-filter: blur(20px);
+  border-radius: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 40px 32px;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Form Container - Make scrollable */
+.formContainer {
+  width: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Custom scrollbar for form container */
+.formContainer::-webkit-scrollbar {
+  width: 4px;
+}
+
+.formContainer::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.formContainer::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-3, #4361ee));
+  border-radius: 4px;
+}
+
+.formHeader {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.formHeader h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fff, var(--gold, #ffd700));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.formHeader p {
+  font-size: 14px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+/* Google Button */
+.googleBtn {
+  width: 100%;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 40px;
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.googleBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.googleBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.divider span {
+  margin: 0 12px;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formRow {
+  display: flex;
+  gap: 16px;
+}
+
+.formGroup {
+  flex: 1;
+  position: relative;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  font-size: 15px;
+  color: var(--text-primary, white);
+  transition: all 0.2s;
+  outline: none;
+}
+
+.formGroup input:focus {
+  border-color: var(--gold, #ffd700);
+  box-shadow: 0 0 20px rgba(255, 214, 10, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.formGroup input.error {
+  border-color: var(--danger, #ef4444);
+}
+
+/* Password Field */
+.passwordField {
+  position: relative;
+}
+
+.passwordField input {
+  padding-right: 48px;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.passwordToggle:hover {
+  color: var(--gold, #ffd700);
+}
+
+/* Password Strength - Simplified */
+.passwordStrength {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 10px;
+}
+
+.passwordStrength span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+}
+
+.passwordStrength span.valid {
+  color: var(--success, #10b981);
+}
+
+.passwordStrength i {
+  font-size: 8px;
+}
+
+/* Error and Success Messages */
+.errorMsg {
+  font-size: 11px;
+  color: var(--danger, #ef4444);
+  margin-top: 6px;
+  display: block;
+  margin-left: 16px;
+}
+
+.submitError {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger, #ef4444);
+  border-radius: 20px;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--danger, #ef4444);
+  text-align: center;
+}
+
+/* Referral Hint */
+.referralHint {
+  font-size: 11px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  margin-top: 8px;
+  margin-left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Submit Button */
+.submitBtn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-3, #4361ee));
+  border: none;
+  border-radius: 40px;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.submitBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(255, 77, 109, 0.4);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Switch Link */
+.switchLink {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 24px;
+}
+
+.switchLink button {
+  background: none;
+  border: none;
+  color: var(--gold, #ffd700);
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.switchLink button:hover {
+  text-decoration: underline;
+}
+
+/* Landing Preview - Make scrollable */
+.landingPreview {
+  flex: 1;
+  min-width: 320px;
+  max-width: 500px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 8px;
+  animation: fadeInUp 0.5s ease-out 0.2s both;
+}
+
+/* Custom scrollbar for landing preview */
+.landingPreview::-webkit-scrollbar {
+  width: 4px;
+}
+
+.landingPreview::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.landingPreview::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-3, #4361ee));
+  border-radius: 4px;
+}
+
+.logoSection {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logoIcon {
+  font-size: 56px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-3, #4361ee));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+.logoText {
+  font-size: 32px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, var(--gold, #ffd700));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tagline {
+  font-size: 14px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+
+/* Stats Section */
+.statsSection {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat {
+  text-align: center;
+  flex: 1;
+}
+
+.statValue {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--gold, #ffd700), #ffb347);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  margin-top: 4px;
+}
+
+/* Section */
+.section {
+  margin-bottom: 28px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary, white);
+}
+
+/* Creator & Unity Cards */
+.creatorList, .unityList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.creatorCard, .unityCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.creatorCard:hover, .unityCard:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.creatorAvatar {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-3, #4361ee));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.unityIcon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.creatorInfo, .unityInfo {
+  flex: 1;
+}
+
+.creatorName, .unityName {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: var(--text-primary, white);
+}
+
+.creatorRole {
+  font-size: 11px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  margin-bottom: 4px;
+}
+
+.creatorStats, .unityStats {
+  display: flex;
+  gap: 12px;
+  font-size: 10px;
+  color: var(--gold, #ffd700);
+}
+
+/* Guidelines */
+.guidelines {
+  margin-top: 28px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 20px;
+  border-left: 3px solid var(--gold, #ffd700);
+}
+
+.guidelines h4 {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--gold, #ffd700);
+}
+
+.guidelines ul {
+  list-style: none;
+}
+
+.guidelines li {
+  font-size: 11px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  margin-bottom: 4px;
+}
+
+/* Onboarding Modal */
+.onboardingModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Welcome Modal */
+.welcomeModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(20px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s ease;
+}
+
+.welcomeModal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.welcomeCard {
+  background: linear-gradient(135deg, rgba(28, 28, 30, 0.98), rgba(20, 20, 25, 0.98));
+  backdrop-filter: blur(40px);
+  border-radius: 48px;
+  padding: 40px 32px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  border: 1px solid rgba(255, 214, 10, 0.2);
+  box-shadow: 0 0 50px rgba(255, 214, 10, 0.2);
+  animation: modalPop 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .authPage {
+    padding-top: 70px;
+  }
+  
+  .appContainer {
+    padding: 20px 16px;
+    min-height: calc(100vh - 100px);
+  }
+  
+  .contentWrapper {
+    flex-direction: column;
+  }
+  
+  .authCard {
+    width: 100%;
+  }
+  
+  .formContainer {
+    max-height: 55vh;
+  }
+  
+  .landingPreview {
+    max-height: 40vh;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .authPage {
+    padding-top: 60px;
+    padding-bottom: 20px;
+  }
+  
+  .authCard {
+    padding: 32px 24px;
+  }
+  
+  .authToggle {
+    top: 12px;
+    right: 16px;
+  }
+  
+  .toggleBtn {
+    padding: 6px 16px;
+    font-size: 12px;
+  }
+  
+  .formRow {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .statsSection {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  
+  .stat {
+    min-width: 80px;
+  }
+  
+  .passwordStrength {
+    gap: 8px;
+  }
+  
+  .passwordStrength span {
+    font-size: 9px;
+  }
+  
+  .formContainer {
+    max-height: 50vh;
+  }
+}

@@ -1,10 +1,9 @@
-﻿// comeunity/app/components/layout/MainLayout.tsx
-'use client';
+﻿'use client';
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
-import BottomNav from '../Navigation/BottomNav';
-import { FeedHeader } from '../Navigation/FeedHeader';
+import BottomNav from './BottomNav';
+import { FeedHeader } from './FeedHeader';
 import styles from './MainLayout.module.css';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -18,8 +17,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   // Define public routes that don't require authentication
-  const publicRoutes = ['/auth', '/publicprofile', '/public-profile-test', '/test-users'];
-  const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
+  const publicRoutes = ['/', '/auth', '/publicprofile'];
+  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname?.startsWith(route));
 
   // Update current page based on pathname
   useEffect(() => {
@@ -51,7 +50,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     checkUser();
   }, []);
 
-  // Show header and bottom nav on ALL authenticated pages
+  // Show header and bottom nav on authenticated pages only
   const showNavigation = !isPublicRoute && user;
 
   if (loading && !isPublicRoute) {
@@ -65,7 +64,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className={styles.container}>
       <div className={styles.contentWrapper}>
-        {/* Header - Fixed at top */}
+        {/* Header - Show on authenticated pages */}
         {showNavigation && (
           <FeedHeader
             onMenuClick={() => setShowSidebar(true)}
@@ -85,7 +84,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         
-        {/* Bottom Nav - Fixed at bottom */}
+        {/* Bottom Nav - Show on authenticated pages */}
         {showNavigation && (
           <BottomNav 
             currentPage={currentPage} 

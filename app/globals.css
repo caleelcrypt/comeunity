@@ -51,7 +51,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Desktop - center the phone frame */
+/* Desktop - center content */
 @media (min-width: 768px) {
   body {
     display: flex;
@@ -434,7 +434,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==================== FEED SPECIFIC STYLES ==================== */
-/* These are used by the feed components */
 
 /* Create Post Bar */
 .create-post-bar {
@@ -875,11 +874,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .char-counter.green {
-  color: #10b981;
+  color: var(--success);
 }
 
 .char-counter.red {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .char-counter.orange {
@@ -1003,4 +1002,18 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 10px;
   color: #aaa;
   text-align: left;
+}
+
+/* ==================== AUTH PAGE STYLES ==================== */
+.auth-page-container {
+  min-height: 100vh;
+  background: var(--bg-primary, #0a0a0f);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ensure auth page doesn't have any margins or padding that could affect the layout */
+.auth-page-container > * {
+  margin: 0;
+  padding: 0;
 }

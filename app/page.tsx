@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabaseClient';
-import LandingPage from './components/Landing/LandingPage';
+import LandingPreview from './auth/components/LandingPreview';
 
 export default function HomePage() {
   const router = useRouter();
@@ -65,6 +65,6 @@ export default function HomePage() {
     );
   }
 
-  // If not logged in, show landing page
-  return <LandingPage />;
+  // If not logged in, show landing preview
+  return <LandingPreview />;
 }

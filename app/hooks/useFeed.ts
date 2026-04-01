@@ -32,6 +32,11 @@ export const useFeed = () => {
     setLoading(false);
   }, [fetchPosts, filter]);
 
+  // Load posts when component mounts or filter changes
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
+
   const refreshPosts = useCallback(async () => {
     setRefreshing(true);
     const fetchedPosts = await fetchPosts(filter === 'all' ? undefined : filter);
@@ -39,47 +44,49 @@ export const useFeed = () => {
     setRefreshing(false);
   }, [fetchPosts, filter]);
 
-  useEffect(() => {
-    loadPosts();
-  }, [loadPosts]);
-
   const createPost = useCallback(async (content: string, link: string | undefined, category: string) => {
     try {
       const newPost = await createPostAPI({ content, link, category });
       setPosts(prev => [newPost, ...prev]);
+      showToast(`✨ Post shared!`, 'xp');
       return true;
     } catch (err) {
+      console.error('Create post error:', err);
       setError(err instanceof Error ? err.message : 'Failed to create post');
+      showToast('Failed to create post', 'error');
       return false;
     }
-  }, [createPostAPI]);
+  }, [createPostAPI, showToast]);
 
   const updatePost = useCallback(async (postId: string, content: string, link?: string) => {
     try {
       await updatePostAPI(postId, content, link);
-      // Update the post in the local state
       setPosts(prev => prev.map(post => 
         post.id === postId 
           ? { ...post, content, link: link || null, updated_at: new Date().toISOString() }
           : post
       ));
+      showToast('✨ Post updated!', 'xp');
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update post');
+      showToast('Failed to update post', 'error');
       return false;
     }
-  }, [updatePostAPI]);
+  }, [updatePostAPI, showToast]);
 
   const deletePost = useCallback(async (postId: string) => {
     try {
       await deletePostAPI(postId);
       setPosts(prev => prev.filter(post => post.id !== postId));
+      showToast('🗑️ Post deleted', 'info');
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete post');
+      showToast('Failed to delete post', 'error');
       return false;
     }
-  }, [deletePostAPI]);
+  }, [deletePostAPI, showToast]);
 
   const toggleLike = useCallback(async (postId: string, isOwnPost: boolean = false) => {
     try {
@@ -95,11 +102,11 @@ export const useFeed = () => {
       ));
       if (liked && !isOwnPost) {
         showToast('❤️ Liked! +5 XP +2 Coins', 'xp');
-      } else if (liked) {
-        showToast('❤️ Liked!', 'info');
       }
+      return liked;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle like');
+      return false;
     }
   }, [toggleLikeAPI, showToast]);
 
@@ -112,40 +119,49 @@ export const useFeed = () => {
           : post
       ));
       showToast(following ? `✅ Following` : `👋 Unfollowed`);
+      return following;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle follow');
+      return false;
     }
   }, [toggleFollowAPI, showToast]);
 
   const sharePost = useCallback(async (postId: string, isOwnPost: boolean = false) => {
     try {
       await sharePostAPI(postId, isOwnPost);
+      if (!isOwnPost) {
+        showToast('📤 Shared! +10 XP +5 Coins', 'xp');
+      } else {
+        showToast('📤 Shared!', 'info');
+      }
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to share post');
       return false;
     }
-  }, [sharePostAPI]);
+  }, [sharePostAPI, showToast]);
 
   const treasurePost = useCallback(async (postId: string) => {
     try {
-      await treasurePostAPI(postId);
+      await treasurePostAPI(postId, false);
+      showToast('💎 Post treasured! +10 XP', 'xp');
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to treasure post');
       return false;
     }
-  }, [treasurePostAPI]);
+  }, [treasurePostAPI, showToast]);
 
   const reportPost = useCallback(async (postId: string, reason: string) => {
     try {
       await reportContentAPI('post', postId, reason);
+      showToast(`📢 Report sent`, 'info');
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit report');
       return false;
     }
-  }, [reportContentAPI]);
+  }, [reportContentAPI, showToast]);
 
   return {
     posts,

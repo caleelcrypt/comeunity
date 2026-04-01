@@ -1,7 +1,7 @@
 ﻿'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '../../../lib/supabaseClient';  // ← Changed from @/lib/supabaseClient
 import styles from './BottomNav.module.css';
 
 interface BottomNavProps {

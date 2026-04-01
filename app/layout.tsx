@@ -14,7 +14,7 @@ export default function RootLayout({
   const pathname = usePathname();
   
   // Pages that should NOT use MainLayout (no bottom nav, no extra padding)
-  const noLayoutPages = ['/auth', '/publicprofile'];
+  const noLayoutPages = ['/', '/auth', '/publicprofile'];
   const useMainLayout = !noLayoutPages.includes(pathname);
   
   return (
@@ -31,7 +31,7 @@ export default function RootLayout({
             {children}
           </MainLayout>
         ) : (
-          <div className="min-h-screen bg-[#0a0a0f]">
+          <div className="auth-page-container">
             {children}
           </div>
         )}
