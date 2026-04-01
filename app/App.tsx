@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { Feed } from './components/feed/Feed';
+import { supabase } from '../lib/supabaseClient';
+import { Feed } from './pages/Feed';
 import './styles/feed.css';
 
 function App() {

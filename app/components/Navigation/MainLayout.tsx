@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
 import BottomNav from '../Navigation/BottomNav';
-import { FeedHeader } from '../Navigation/FeedHeader';
+import FeedHeader from '../Navigation/FeedHeader';
 import styles from './MainLayout.module.css';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
