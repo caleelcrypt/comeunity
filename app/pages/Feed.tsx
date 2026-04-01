@@ -1,4 +1,5 @@
-﻿'use client';
+﻿// comeunity/app/pages/Feed.tsx
+'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
@@ -15,6 +16,7 @@ import { ReportModal } from '../components/feed/ReportModal';
 import { ConfirmModal } from '../components/feed/ConfirmModal';
 import { CelebrationPopup } from '../components/feed/CelebrationPopup';
 import { EmptyFeed } from '../components/feed/EmptyFeed';
+import BottomNav from '../components/Navigation/BottomNav';
 import { DashboardSidebar } from '../components/dashboard/DashboardSidebar';
 import { SearchModal } from '../components/dashboard/SearchModal';
 import { NotificationModal } from '../components/dashboard/NotificationModal';
@@ -121,122 +123,129 @@ export default function FeedPage() {
 
   return (
     <div className={styles.feedContainer}>
-      {/* Main Feed Content - Header is now handled by MainLayout */}
-      <CreatePostBar onClick={() => setShowCreateModal(true)} />
-      
-      <CategoryTabs 
-        activeCategory={feed.filter} 
-        onCategoryChange={feed.setFilter} 
-      />
-      
-      <div className={styles.feedList}>
-        {feed.loading && feed.posts.length === 0 ? (
-          <div className={styles.loadingFeed}>
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Loading posts...</p>
+      <div className={styles.phoneFrame}>
+        {/* Main Feed Content */}
+        <main className={styles.mainContent}>
+          <CreatePostBar onClick={() => setShowCreateModal(true)} />
+          
+          <CategoryTabs 
+            activeCategory={feed.filter} 
+            onCategoryChange={feed.setFilter} 
+          />
+          
+          <div className={styles.feedList}>
+            {feed.loading && feed.posts.length === 0 ? (
+              <div className={styles.loadingFeed}>
+                <i className="fas fa-spinner fa-spin"></i>
+                <p>Loading posts...</p>
+              </div>
+            ) : feed.posts.length === 0 ? (
+              <EmptyFeed onCreatePost={() => setShowCreateModal(true)} />
+            ) : (
+              feed.posts.map(post => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onLike={() => feed.toggleLike(post.id)}
+                  onFollow={() => feed.toggleFollow(post.author_id, post.id)}
+                  onReport={() => handleOpenReport(post)}
+                  onComment={() => handleOpenComment(post)}
+                  onTip={() => handleOpenTip(post)}
+                  onShare={() => handleOpenShare(post)}
+                  onConfirm={handleConfirm}
+                />
+              ))
+            )}
           </div>
-        ) : feed.posts.length === 0 ? (
-          <EmptyFeed onCreatePost={() => setShowCreateModal(true)} />
-        ) : (
-          feed.posts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onLike={() => feed.toggleLike(post.id)}
-              onFollow={() => feed.toggleFollow(post.author_id, post.id)}
-              onReport={() => handleOpenReport(post)}
-              onComment={() => handleOpenComment(post)}
-              onTip={() => handleOpenTip(post)}
-              onShare={() => handleOpenShare(post)}
-              onConfirm={handleConfirm}
-            />
-          ))
-        )}
+        </main>
+
+        {/* Bottom Navigation */}
+        <BottomNav />
+
+        {/* Modals */}
+        <CreatePostModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreatePost={feed.createPost}
+          onConfirm={handleConfirm}
+          showToast={showToast}
+        />
+
+        <CommentModal
+          isOpen={showCommentModal}
+          onClose={() => setShowCommentModal(false)}
+          post={selectedPost}
+          onConfirm={handleConfirm}
+          showToast={showToast}
+        />
+
+        <TipModal
+          isOpen={showTipModal}
+          onClose={() => setShowTipModal(false)}
+          post={selectedPost}
+          onConfirm={handleConfirm}
+          showToast={showToast}
+          onCelebration={handleCelebration}
+        />
+
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          post={selectedPost}
+          showToast={showToast}
+          onCelebration={handleCelebration}
+        />
+
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          post={selectedPost}
+          onSubmitReport={feed.reportPost}
+          onConfirm={handleConfirm}
+          showToast={showToast}
+        />
+
+        <ConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          config={confirmConfig}
+        />
+
+        <CelebrationPopup
+          isOpen={showCelebration}
+          config={celebrationConfig}
+          onClose={() => setShowCelebration(false)}
+        />
+
+        <DashboardSidebar
+          isOpen={showSidebar}
+          onClose={() => setShowSidebar(false)}
+          onOpenReviews={() => setShowReviewPopup(true)}
+          showToast={showToast}
+          userProfile={userProfile}
+        />
+
+        <SearchModal
+          isOpen={showSearchModal}
+          onClose={() => setShowSearchModal(false)}
+          posts={feed.posts}
+          showToast={showToast}
+        />
+
+        <NotificationModal
+          isOpen={showNotificationModal}
+          onClose={() => setShowNotificationModal(false)}
+          showToast={showToast}
+          onConfirm={handleConfirm}
+        />
+
+        <ReviewPopup
+          isOpen={showReviewPopup}
+          onClose={() => setShowReviewPopup(false)}
+          showToast={showToast}
+          onConfirm={handleConfirm}
+        />
       </div>
-
-      {/* Modals */}
-      <CreatePostModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onCreatePost={feed.createPost}
-        onConfirm={handleConfirm}
-        showToast={showToast}
-      />
-
-      <CommentModal
-        isOpen={showCommentModal}
-        onClose={() => setShowCommentModal(false)}
-        post={selectedPost}
-        onConfirm={handleConfirm}
-        showToast={showToast}
-      />
-
-      <TipModal
-        isOpen={showTipModal}
-        onClose={() => setShowTipModal(false)}
-        post={selectedPost}
-        onConfirm={handleConfirm}
-        showToast={showToast}
-        onCelebration={handleCelebration}
-      />
-
-      <ShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        post={selectedPost}
-        showToast={showToast}
-        onCelebration={handleCelebration}
-      />
-
-      <ReportModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        post={selectedPost}
-        onSubmitReport={feed.reportPost}
-        onConfirm={handleConfirm}
-        showToast={showToast}
-      />
-
-      <ConfirmModal
-        isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        config={confirmConfig}
-      />
-
-      <CelebrationPopup
-        isOpen={showCelebration}
-        config={celebrationConfig}
-        onClose={() => setShowCelebration(false)}
-      />
-
-      <DashboardSidebar
-        isOpen={showSidebar}
-        onClose={() => setShowSidebar(false)}
-        onOpenReviews={() => setShowReviewPopup(true)}
-        showToast={showToast}
-        userProfile={userProfile}
-      />
-
-      <SearchModal
-        isOpen={showSearchModal}
-        onClose={() => setShowSearchModal(false)}
-        posts={feed.posts}
-        showToast={showToast}
-      />
-
-      <NotificationModal
-        isOpen={showNotificationModal}
-        onClose={() => setShowNotificationModal(false)}
-        showToast={showToast}
-        onConfirm={handleConfirm}
-      />
-
-      <ReviewPopup
-        isOpen={showReviewPopup}
-        onClose={() => setShowReviewPopup(false)}
-        showToast={showToast}
-        onConfirm={handleConfirm}
-      />
     </div>
   );
 }

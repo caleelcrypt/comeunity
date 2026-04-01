@@ -1,6 +1,7 @@
+// comeunity/app/App.tsx
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { Feed } from './pages/Feed';
+import { supabase } from '../lib/supabaseClient';  // Change from supabase to supabaseClient
+import { Feed } from './pages/feed/Feed';
 import './styles/feed.css';
 
 function App() {

@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+// comeunity/app/components/feed/Toast.tsx
+import React, { useEffect, useState, useCallback, createContext, useContext } from 'react';
 
 export interface ToastMessage {
   id: string;
   message: string;
-  type?: 'info' | 'success' | 'error' | 'coin';
+  type?: 'info' | 'success' | 'error' | 'xp' | 'coin';
   duration?: number;
 }
 
@@ -17,7 +18,7 @@ export const Toast: React.FC<ToastProps> = ({ messages, onRemove }) => {
     messages.forEach(message => {
       const timer = setTimeout(() => {
         onRemove(message.id);
-      }, message.duration || 2000);
+      }, message.duration || 2500);
       
       return () => clearTimeout(timer);
     });
@@ -31,6 +32,8 @@ export const Toast: React.FC<ToastProps> = ({ messages, onRemove }) => {
         return <i className="fas fa-exclamation-circle"></i>;
       case 'coin':
         return <i className="fas fa-coins"></i>;
+      case 'xp':
+        return <i className="fas fa-star"></i>;
       default:
         return <i className="fas fa-gem"></i>;
     }
@@ -44,6 +47,8 @@ export const Toast: React.FC<ToastProps> = ({ messages, onRemove }) => {
         return 'linear-gradient(135deg, #ef4444, #dc2626)';
       case 'coin':
         return 'linear-gradient(135deg, #ffd700, #ffaa00)';
+      case 'xp':
+        return 'linear-gradient(135deg, #a855f7, #7c3aed)';
       default:
         return 'linear-gradient(135deg, var(--gradient-1), var(--gradient-3))';
     }
@@ -112,40 +117,30 @@ export const Toast: React.FC<ToastProps> = ({ messages, onRemove }) => {
             transform: translateY(0);
           }
         }
-        @keyframes toastSlideOut {
-          from {
-            opacity: 1;
-            transform: translateY(0);
+        @media (max-width: 480px) {
+          .toast-item {
+            font-size: 12px;
+            padding: 10px 20px;
+            bottom: 80px;
           }
-          to {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-        }
-        .toast-item-exit {
-          animation: toastSlideOut 0.3s ease forwards;
         }
       `}</style>
     </div>
   );
 };
 
-// Toast Provider Component
-interface ToastProviderProps {
-  children: React.ReactNode;
-}
-
+// Toast Context
 interface ToastContextType {
-  showToast: (message: string, type?: 'info' | 'success' | 'error' | 'coin', duration?: number) => void;
+  showToast: (message: string, type?: 'info' | 'success' | 'error' | 'xp' | 'coin', duration?: number) => void;
   hideToast: (id: string) => void;
 }
 
-export const ToastContext = React.createContext<ToastContextType | undefined>(undefined);
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [messages, setMessages] = useState<ToastMessage[]>([]);
 
-  const showToast = useCallback((message: string, type: 'info' | 'success' | 'error' | 'coin' = 'info', duration: number = 2000) => {
+  const showToast = useCallback((message: string, type: 'info' | 'success' | 'error' | 'xp' | 'coin' = 'info', duration: number = 2500) => {
     const id = Date.now().toString();
     setMessages(prev => [...prev, { id, message, type, duration }]);
     
@@ -166,9 +161,8 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   );
 };
 
-// Custom hook for using toast
 export const useToastContext = () => {
-  const context = React.useContext(ToastContext);
+  const context = useContext(ToastContext);
   if (!context) {
     throw new Error('useToastContext must be used within a ToastProvider');
   }

@@ -23,14 +23,12 @@
   flex-direction: column;
 }
 
-/* Main content area - scrollable */
+/* Main content area - Scrollable */
 .main {
   flex: 1;
   overflow-y: auto;
-  padding-top: 80px;      /* Space for fixed header */
-  padding-bottom: 80px;   /* Space for fixed bottom nav */
-  padding-left: 0;
-  padding-right: 0;
+  padding: 0;
+  margin: 0;
   position: relative;
   z-index: 1;
 }
@@ -81,17 +79,5 @@
     width: 100%;
     height: 100vh;
     border-radius: 0;
-  }
-  
-  .main {
-    padding-top: 76px;
-    padding-bottom: 76px;
-  }
-}
-
-@media (max-width: 380px) {
-  .main {
-    padding-top: 72px;
-    padding-bottom: 72px;
   }
 }

@@ -1,4 +1,5 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+﻿// comeunity/app/components/feed/CreatePostModal.tsx
+import React, { useState, useRef, useEffect } from 'react';
 import { useMentions } from '../../hooks/useMentions';
 
 interface CreatePostModalProps {
@@ -10,6 +11,7 @@ interface CreatePostModalProps {
 }
 
 const CATEGORIES = [
+  { id: 'Challenge', label: '🏆 Challenge' },
   { id: 'Art', label: '🎨 Art' },
   { id: 'Music', label: '🎵 Music' },
   { id: 'Gaming', label: '🎮 Gaming' },
@@ -21,8 +23,7 @@ const CATEGORIES = [
   { id: 'Food', label: '🍜 Food' },
   { id: 'Dance', label: '💃 Dance' },
   { id: 'Comedy', label: '🎭 Comedy' },
-  { id: 'Travel', label: '✈️ Travel' },
-  { id: 'Challenge', label: '🏆 Challenge' }
+  { id: 'Travel', label: '✈️ Travel' }
 ];
 
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
@@ -93,13 +94,23 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const getXpPreview = () => {
     const mentions = content.match(/@(\w+)/g) || [];
-    let xp = 50;
+    // Base XP: 50 for Challenge, 15 for regular
+    let xp = selectedCategory === 'Challenge' ? 50 : 15;
+    // Link bonus: +20 XP
     if (link) xp += 20;
+    // Mention bonus: +10 XP per mention (max 3)
     xp += mentions.slice(0, 3).length * 10;
     return xp;
   };
 
+  const getCoinPreview = () => {
+    // Coins: 50 for Challenge, 5 for regular
+    return selectedCategory === 'Challenge' ? 50 : 5;
+  };
+
   const handleSubmit = async () => {
+    console.log('Submit clicked', { content, link, selectedCategory });
+    
     if (!content.trim()) {
       showToast('Please write something');
       return;
@@ -126,11 +137,18 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
 
     setIsSubmitting(true);
+    console.log('Calling onCreatePost...');
     const success = await onCreatePost(content, link || undefined, selectedCategory);
+    console.log('onCreatePost result:', success);
     setIsSubmitting(false);
     
     if (success) {
+      const xpAmount = getXpPreview();
+      const coinAmount = getCoinPreview();
+      showToast(`✨ Post shared! +${xpAmount} XP +${coinAmount} Coins`, 'xp');
       onClose();
+    } else {
+      showToast('Failed to create post. Please try again.', 'error');
     }
   };
 
@@ -224,7 +242,10 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </div>
         
         <div className="xp-preview">
-          Post → +{getXpPreview()} XP
+          {selectedCategory === 'Challenge' ? '🏆 Challenge Post' : '📝 Regular Post'} → 
+          +{getXpPreview()} XP +{getCoinPreview()} Coins
+          {link && ' (includes link bonus +20 XP)'}
+          {content.match(/@(\w+)/g) && ` (includes ${Math.min(content.match(/@(\w+)/g)?.length || 0, 3)} mention bonus +${Math.min(content.match(/@(\w+)/g)?.length || 0, 3) * 10} XP)`}
         </div>
         
         <button 

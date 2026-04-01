@@ -1,3 +1,4 @@
+// comeunity/app/hooks/useSupabase.ts
 import { useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Post, PostWithInteraction, Comment, Review, Notification } from '../types';
@@ -30,7 +31,7 @@ export const useSupabase = () => {
         .from('posts')
         .select(`
           *,
-          profiles:author_id (username, full_name, avatar_url)
+          profiles:user_id (username, full_name, avatar_url)
         `)
         .order('created_at', { ascending: false });
       
@@ -45,10 +46,11 @@ export const useSupabase = () => {
       if (!user) {
         return posts?.map(post => ({
           ...post,
-          author_name: post.profiles?.full_name || post.profiles?.username,
+          author_name: post.profiles?.full_name || post.profiles?.username || 'User',
           author_avatar: post.profiles?.avatar_url,
           is_liked: false,
-          is_following: false
+          is_following: false,
+          is_own_post: false
         })) || [];
       }
       
@@ -69,10 +71,11 @@ export const useSupabase = () => {
       
       return posts?.map(post => ({
         ...post,
-        author_name: post.profiles?.full_name || post.profiles?.username,
+        author_name: post.profiles?.full_name || post.profiles?.username || 'User',
         author_avatar: post.profiles?.avatar_url,
         is_liked: likedSet.has(post.id),
-        is_following: followingSet.has(post.author_id)
+        is_following: followingSet.has(post.user_id),
+        is_own_post: post.user_id === user.id
       })) || [];
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch posts');
@@ -96,10 +99,26 @@ export const useSupabase = () => {
         .eq('id', user.id)
         .single();
       
+      // Calculate XP and Coins based on category
+      const isChallenge = input.category === 'Challenge';
+      let xpGain = isChallenge ? 50 : 15;
+      let coinGain = isChallenge ? 50 : 5;
+      
+      // Add link bonus
+      if (input.link) {
+        xpGain += 20;
+        // No coin bonus for link
+      }
+      
+      // Add mention bonus (max 3 mentions)
+      const mentions = input.content.match(/@(\w+)/g) || [];
+      xpGain += mentions.slice(0, 3).length * 10;
+      // No coin bonus for mentions
+      
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
-          author_id: user.id,
+          user_id: user.id,
           content: input.content,
           link: input.link || null,
           category: input.category,
@@ -111,42 +130,17 @@ export const useSupabase = () => {
       
       if (postError) throw postError;
       
-      const mentions = input.content.match(/@(\w+)/g) || [];
-      const xpGain = 50 + (input.link ? 20 : 0) + (mentions.slice(0, 3).length * 10);
-      
+      // Award XP and Coins
       await supabase.rpc('add_xp', { user_id: user.id, xp_amount: xpGain });
-      
-      // Create notification for mentions
-      if (mentions.length > 0) {
-        for (const mention of mentions.slice(0, 3)) {
-          const mentionedUsername = mention.substring(1);
-          const { data: mentionedUser } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('username', mentionedUsername)
-            .single();
-          
-          if (mentionedUser && mentionedUser.id !== user.id) {
-            await supabase
-              .from('notifications')
-              .insert({
-                user_id: mentionedUser.id,
-                type: 'mention',
-                actor_id: user.id,
-                post_id: post.id,
-                read: false,
-                data: { content: input.content.substring(0, 100) }
-              });
-          }
-        }
-      }
+      await supabase.rpc('add_coins', { user_id: user.id, coin_amount: coinGain });
       
       return {
         ...post,
         author_name: profile?.full_name || profile?.username || 'User',
         author_avatar: profile?.avatar_url,
         is_liked: false,
-        is_following: false
+        is_following: false,
+        is_own_post: true
       };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create post');
@@ -156,10 +150,65 @@ export const useSupabase = () => {
     }
   }, []);
 
-  const toggleLike = useCallback(async (postId: string) => {
+  const updatePost = useCallback(async (postId: string, content: string, link?: string) => {
+    setLoading(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      
+      const { error: updateError } = await supabase
+        .from('posts')
+        .update({
+          content,
+          link: link || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', postId)
+        .eq('user_id', user.id);
+      
+      if (updateError) throw updateError;
+      
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update post');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deletePost = useCallback(async (postId: string) => {
+    setLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
+      const { error: deleteError } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user.id);
+      
+      if (deleteError) throw deleteError;
+      
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete post');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const toggleLike = useCallback(async (postId: string, isOwnPost: boolean = false) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
+      // Don't award XP/coins for liking your own post
+      const shouldReward = !isOwnPost;
       
       const { data: existingLike } = await supabase
         .from('likes')
@@ -169,6 +218,7 @@ export const useSupabase = () => {
         .single();
       
       if (existingLike) {
+        // Unlike
         await supabase
           .from('likes')
           .delete()
@@ -178,76 +228,29 @@ export const useSupabase = () => {
         
         return { liked: false };
       } else {
+        // Like
         await supabase
           .from('likes')
           .insert({ post_id: postId, user_id: user.id });
         
         await supabase.rpc('increment_post_likes', { post_id: postId });
         
-        // Check if user already got XP for liking this post
-        const { data: alreadyLiked } = await supabase
-          .from('user_post_actions')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('post_id', postId)
-          .eq('action', 'like')
-          .single();
-        
-        if (!alreadyLiked) {
-          await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 5 });
-          await supabase
+        // Award XP and Coins only if not liking own post and once per post
+        if (shouldReward) {
+          const { data: alreadyLiked } = await supabase
             .from('user_post_actions')
-            .insert({ user_id: user.id, post_id: postId, action: 'like' });
-        }
-        
-        // Create notification for post author
-        const { data: post } = await supabase
-          .from('posts')
-          .select('author_id')
-          .eq('id', postId)
-          .single();
-        
-        if (post && post.author_id !== user.id) {
-          // Check if we should group this notification
-          const { data: recentLike } = await supabase
-            .from('notifications')
-            .select('id, data')
-            .eq('user_id', post.author_id)
-            .eq('type', 'like')
+            .select('id')
+            .eq('user_id', user.id)
             .eq('post_id', postId)
-            .eq('read', false)
-            .order('created_at', { ascending: false })
-            .limit(1)
+            .eq('action_type', 'like')
             .single();
           
-          if (recentLike) {
-            // Update existing grouped notification
-            const currentCount = recentLike.data?.count || 1;
-            const currentUsers = recentLike.data?.users || [];
-            if (!currentUsers.includes(user.id)) {
-              await supabase
-                .from('notifications')
-                .update({
-                  data: {
-                    count: currentCount + 1,
-                    users: [...currentUsers, user.id],
-                    last_actor: user.id
-                  }
-                })
-                .eq('id', recentLike.id);
-            }
-          } else {
-            // Create new notification
+          if (!alreadyLiked) {
+            await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 5 });
+            await supabase.rpc('add_coins', { user_id: user.id, coin_amount: 2 });
             await supabase
-              .from('notifications')
-              .insert({
-                user_id: post.author_id,
-                type: 'like',
-                actor_id: user.id,
-                post_id: postId,
-                read: false,
-                data: { count: 1, users: [user.id] }
-              });
+              .from('user_post_actions')
+              .insert({ user_id: user.id, post_id: postId, action_type: 'like' });
           }
         }
         
@@ -282,18 +285,6 @@ export const useSupabase = () => {
           .from('follows')
           .insert({ follower_id: user.id, following_id: authorId });
         
-        // Create notification for the user being followed
-        if (authorId !== user.id) {
-          await supabase
-            .from('notifications')
-            .insert({
-              user_id: authorId,
-              type: 'follow',
-              actor_id: user.id,
-              read: false
-            });
-        }
-        
         return { following: true };
       }
     } catch (err) {
@@ -311,12 +302,16 @@ export const useSupabase = () => {
         .from('comments')
         .select(`
           *,
-          profiles:author_id (username, full_name, avatar_url)
+          profiles:user_id (username, full_name, avatar_url)
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
       
       if (commentsError) throw commentsError;
+      
+      if (!comments || comments.length === 0) {
+        return [];
+      }
       
       let likedSet = new Set();
       if (user) {
@@ -324,7 +319,7 @@ export const useSupabase = () => {
           .from('comment_likes')
           .select('comment_id')
           .eq('user_id', user.id)
-          .in('comment_id', comments?.map(c => c.id) || []);
+          .in('comment_id', comments.map(c => c.id));
         
         likedSet = new Set(likedComments?.map(l => l.comment_id));
       }
@@ -332,10 +327,10 @@ export const useSupabase = () => {
       const commentMap = new Map();
       const rootComments: any[] = [];
       
-      comments?.forEach(comment => {
+      comments.forEach(comment => {
         const commentWithInteraction = {
           ...comment,
-          author_name: comment.profiles?.full_name || comment.profiles?.username,
+          author_name: comment.profiles?.full_name || comment.profiles?.username || 'User',
           author_avatar: comment.profiles?.avatar_url,
           is_liked: likedSet.has(comment.id),
           replies: []
@@ -343,7 +338,7 @@ export const useSupabase = () => {
         commentMap.set(comment.id, commentWithInteraction);
       });
       
-      comments?.forEach(comment => {
+      comments.forEach(comment => {
         const commentWithInteraction = commentMap.get(comment.id);
         if (comment.parent_id && commentMap.has(comment.parent_id)) {
           commentMap.get(comment.parent_id).replies.push(commentWithInteraction);
@@ -361,7 +356,7 @@ export const useSupabase = () => {
     }
   }, []);
 
-  const createComment = useCallback(async (input: { post_id: string; content: string; parent_id?: string | null }) => {
+  const createComment = useCallback(async (input: { post_id: string; content: string; parent_id?: string | null; is_own_post?: boolean }) => {
     setLoading(true);
     
     try {
@@ -372,14 +367,14 @@ export const useSupabase = () => {
         .from('comments')
         .insert({
           post_id: input.post_id,
-          author_id: user.id,
+          user_id: user.id,
           content: input.content,
           parent_id: input.parent_id || null,
           likes_count: 0
         })
         .select(`
           *,
-          profiles:author_id (username, full_name, avatar_url)
+          profiles:user_id (username, full_name, avatar_url)
         `)
         .single();
       
@@ -387,46 +382,28 @@ export const useSupabase = () => {
       
       await supabase.rpc('increment_post_comments', { post_id: input.post_id });
       
-      // Check if user already got XP for commenting on this post
-      const { data: alreadyCommented } = await supabase
-        .from('user_post_actions')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('post_id', input.post_id)
-        .eq('action', 'comment')
-        .single();
-      
-      if (!alreadyCommented) {
-        await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 8 });
-        await supabase
+      // Award XP and Coins only if not commenting on own post
+      if (!input.is_own_post) {
+        const { data: alreadyCommented } = await supabase
           .from('user_post_actions')
-          .insert({ user_id: user.id, post_id: input.post_id, action: 'comment' });
-      }
-      
-      // Create notification for post author (if not self-comment)
-      const { data: post } = await supabase
-        .from('posts')
-        .select('author_id')
-        .eq('id', input.post_id)
-        .single();
-      
-      if (post && post.author_id !== user.id) {
-        await supabase
-          .from('notifications')
-          .insert({
-            user_id: post.author_id,
-            type: 'comment',
-            actor_id: user.id,
-            post_id: input.post_id,
-            comment_id: comment.id,
-            read: false,
-            data: { content: input.content.substring(0, 100) }
-          });
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('post_id', input.post_id)
+          .eq('action_type', 'comment')
+          .single();
+        
+        if (!alreadyCommented) {
+          await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 8 });
+          await supabase.rpc('add_coins', { user_id: user.id, coin_amount: 3 });
+          await supabase
+            .from('user_post_actions')
+            .insert({ user_id: user.id, post_id: input.post_id, action_type: 'comment' });
+        }
       }
       
       return {
         ...comment,
-        author_name: comment.profiles?.full_name || comment.profiles?.username,
+        author_name: comment.profiles?.full_name || comment.profiles?.username || 'User',
         author_avatar: comment.profiles?.avatar_url,
         is_liked: false,
         replies: []
@@ -505,25 +482,18 @@ export const useSupabase = () => {
       
       if (tipError) throw tipError;
       
+      // Deduct coins from sender
       await supabase.rpc('deduct_coins', { user_id: user.id, coin_amount: amount });
+      
+      // Add coins to recipient
       await supabase.rpc('add_coins', { user_id: recipientId, coin_amount: amount });
       
-      const xpGain = Math.floor(amount / 10);
+      // XP for sender: 10 XP per tip (once per day? For now, every tip)
+      const xpGain = 10;
       await supabase.rpc('add_xp', { user_id: user.id, xp_amount: xpGain });
       
-      // Create notification for tip recipient
-      if (recipientId !== user.id) {
-        await supabase
-          .from('notifications')
-          .insert({
-            user_id: recipientId,
-            type: 'tip',
-            actor_id: user.id,
-            post_id: postId,
-            read: false,
-            data: { amount, message: message || null }
-          });
-      }
+      // XP for recipient: 5 XP per tip received
+      await supabase.rpc('add_xp', { user_id: recipientId, xp_amount: 5 });
       
       return { tip, xpGain };
     } catch (err) {
@@ -550,6 +520,52 @@ export const useSupabase = () => {
         });
       
       if (reportError) throw reportError;
+      
+      return true;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
+  const sharePost = useCallback(async (postId: string, isOwnPost: boolean = false) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
+      // Award XP and Coins only if not sharing own post and once per post
+      if (!isOwnPost) {
+        const { data: alreadyShared } = await supabase
+          .from('user_post_actions')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('post_id', postId)
+          .eq('action_type', 'share')
+          .single();
+        
+        if (!alreadyShared) {
+          await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 10 });
+          await supabase.rpc('add_coins', { user_id: user.id, coin_amount: 5 });
+          await supabase
+            .from('user_post_actions')
+            .insert({ user_id: user.id, post_id: postId, action_type: 'share' });
+        }
+      }
+      
+      return true;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
+  const treasurePost = useCallback(async (postId: string, isOwnPost: boolean = false) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
+      // No reward for treasuring your own post
+      if (!isOwnPost) {
+        await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 10 });
+      }
       
       return true;
     } catch (err) {
@@ -594,21 +610,20 @@ export const useSupabase = () => {
       
       if (error) throw error;
       
-      // Add XP for reading notification (first time only)
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: alreadyRead } = await supabase
           .from('user_actions')
           .select('id')
           .eq('user_id', user.id)
-          .eq('action', 'read_notification')
+          .eq('action_type', 'read_notification')
           .single();
         
         if (!alreadyRead) {
           await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 10 });
           await supabase
             .from('user_actions')
-            .insert({ user_id: user.id, action: 'read_notification' });
+            .insert({ user_id: user.id, action_type: 'read_notification' });
         }
       }
       
@@ -632,7 +647,6 @@ export const useSupabase = () => {
       
       if (error) throw error;
       
-      // Add XP for marking all as read
       await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 25 });
       
       return true;
@@ -690,7 +704,6 @@ export const useSupabase = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       
-      // Check if user already has a review
       const { data: existingReview } = await supabase
         .from('reviews')
         .select('id')
@@ -716,18 +729,17 @@ export const useSupabase = () => {
       await supabase.rpc('add_xp', { user_id: user.id, xp_amount: 50 });
       await supabase.rpc('add_coins', { user_id: user.id, coin_amount: 10 });
       
-      // Check if user already got XP for writing a review
       const { data: alreadyReviewed } = await supabase
         .from('user_actions')
         .select('id')
         .eq('user_id', user.id)
-        .eq('action', 'write_review')
+        .eq('action_type', 'write_review')
         .single();
       
       if (!alreadyReviewed) {
         await supabase
           .from('user_actions')
-          .insert({ user_id: user.id, action: 'write_review' });
+          .insert({ user_id: user.id, action_type: 'write_review' });
       }
       
       return review;
@@ -786,12 +798,16 @@ export const useSupabase = () => {
     getCurrentUser,
     fetchPosts,
     createPost,
+    updatePost,
+    deletePost,
     toggleLike,
     toggleFollow,
     fetchComments,
     createComment,
     likeComment,
     sendTip,
+    sharePost,
+    treasurePost,
     reportContent,
     fetchNotifications,
     markNotificationRead,

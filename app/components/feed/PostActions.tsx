@@ -1,3 +1,4 @@
+﻿// comeunity/app/components/feed/PostActions.tsx
 import React from 'react';
 
 interface PostActionsProps {
@@ -8,6 +9,8 @@ interface PostActionsProps {
   onComment: () => void;
   onTip: () => void;
   onShare: () => void;
+  isOwnPost?: boolean;
+  showToast?: (message: string, type?: string) => void;
 }
 
 export const PostActions: React.FC<PostActionsProps> = ({
@@ -17,8 +20,22 @@ export const PostActions: React.FC<PostActionsProps> = ({
   onLike,
   onComment,
   onTip,
-  onShare
+  onShare,
+  isOwnPost = false,
+  showToast
 }) => {
+  const handleTip = () => {
+    if (isOwnPost) {
+      if (showToast) showToast('💡 You cannot tip your own post', 'info');
+      return;
+    }
+    onTip();
+  };
+
+  const handleShare = () => {
+    onShare();
+  };
+
   return (
     <div className="post-actions">
       <button className={`action-btn ${liked ? 'liked' : ''}`} onClick={onLike}>
@@ -27,10 +44,10 @@ export const PostActions: React.FC<PostActionsProps> = ({
       <button className="action-btn" onClick={onComment}>
         <i className="far fa-comment"></i> {comments}
       </button>
-      <button className="action-btn tip-btn" onClick={onTip}>
+      <button className="action-btn tip-btn" onClick={handleTip}>
         <i className="fas fa-coins"></i> Tip
       </button>
-      <button className="action-btn" onClick={onShare}>
+      <button className="action-btn" onClick={handleShare}>
         <i className="fas fa-share-alt"></i> Share
       </button>
     </div>

@@ -1,4 +1,5 @@
-﻿'use client';
+﻿// comeunity/app/components/layout/MainLayout.tsx
+'use client';
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
@@ -34,7 +35,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       setUser(session?.user || null);
       
       if (session?.user) {
-        // Fetch user profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('username, full_name, avatar_url, xp, level, coins')
@@ -51,10 +51,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     checkUser();
   }, []);
 
-  // Show header and bottom nav on ALL authenticated pages (not just specific ones)
+  // Show header and bottom nav on ALL authenticated pages
   const showNavigation = !isPublicRoute && user;
 
-  // Don't show loading on public routes
   if (loading && !isPublicRoute) {
     return (
       <div className={styles.loadingContainer}>
@@ -66,7 +65,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className={styles.container}>
       <div className={styles.contentWrapper}>
-        {/* Header - Show on all authenticated pages */}
+        {/* Header - Fixed at top */}
         {showNavigation && (
           <FeedHeader
             onMenuClick={() => setShowSidebar(true)}
@@ -81,11 +80,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           />
         )}
         
+        {/* Main Content - Scrollable */}
         <main className={styles.main}>
           {children}
         </main>
         
-        {/* Bottom Nav - Show on all authenticated pages */}
+        {/* Bottom Nav - Fixed at bottom */}
         {showNavigation && (
           <BottomNav 
             currentPage={currentPage} 
@@ -93,9 +93,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           />
         )}
       </div>
-
-      {/* Modals that need to be accessible globally */}
-      {/* These would need to be lifted up or use a context, but for now they can stay in pages */}
     </div>
   );
 }
