@@ -39,12 +39,10 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
     return `${base}${random}`;
   };
 
-  // Email validation
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // Signup validation - simplified (just 6+ characters)
   const validateSignup = () => {
     if (!firstName.trim()) {
       setSignupError('First name is required');
@@ -73,7 +71,6 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
     return true;
   };
 
-  // Google Auth (works for both login and signup)
   const handleGoogleAuth = async () => {
     setLoginLoading(true);
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -94,7 +91,6 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
     }
   };
 
-  // Email/Password Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
@@ -125,7 +121,6 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
     }
   };
 
-  // Email/Password Signup - FIXED
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateSignup()) return;
@@ -135,91 +130,86 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
     
     try {
       const username = generateUsername(firstName, lastName);
-      const ownReferralCode = username.toUpperCase();
+      const fullName = `${firstName} ${lastName}`;
       
-      // Step 1: Sign up with Supabase Auth
+      console.log('Attempting signup with:', signupEmail);
+      
+      // Sign up with Supabase Auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
           data: {
-            first_name: firstName,
-            last_name: lastName,
             username,
+            full_name: fullName,
           }
         }
       });
       
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        console.error('Signup error details:', signUpError);
+        throw signUpError;
+      }
       
-      if (!authData.user) throw new Error('Signup failed');
+      console.log('Signup response:', authData);
       
-      console.log('User created:', authData.user.id);
+      if (!authData.user) {
+        throw new Error('No user returned from signup');
+      }
       
-      // Step 2: Check if referral code exists
+      // Check if referral code exists
       let referrerId = null;
-      let referrerUsername = null;
       if (referralCode) {
         const { data: referrer } = await supabase
           .from('profiles')
-          .select('id, username')
-          .eq('own_referral_code', referralCode.toUpperCase())
+          .select('id')
+          .eq('username', referralCode.toLowerCase())
           .single();
         
         if (referrer) {
           referrerId = referrer.id;
-          referrerUsername = referrer.username;
         }
       }
       
-      // Step 3: Calculate XP
+      // Calculate XP (50 base + 50 referral bonus)
       const totalXP = referrerId ? 100 : 50;
       
-      // Step 4: Create profile with ONLY the columns that exist
-      const profileData: any = {
-        id: authData.user.id,
-        username,
-        full_name: `${firstName} ${lastName}`,
-        xp: totalXP,
-        coins: 0,
-        own_referral_code: ownReferralCode,
-        onboarding_completed: false,
-      };
-      
-      // Only add optional fields if they exist in the table
-      if (referrerId) profileData.referred_by = referrerId;
-      if (referrerUsername) profileData.referred_by_username = referrerUsername;
-      
+      // Create profile with all matching columns
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert(profileData);
+        .insert({
+          id: authData.user.id,
+          username: username,
+          full_name: fullName,
+          avatar_url: `https://ui-avatars.com/api/?background=ff4d6d&color=fff&name=${firstName}+${lastName}`,
+          bio: null,
+          xp: totalXP,
+          coins: 0,
+          level: 1,
+          followers_count: 0,
+          following_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       
       if (profileError) {
         console.error('Profile creation error:', profileError);
-        // Don't throw, user might already have a profile from the trigger
+        throw profileError;
       }
       
-      // Step 5: Award referrer bonus if applicable
+      // Award referrer bonus if applicable
       if (referrerId) {
-        try {
-          const { data: referrerProfile } = await supabase
+        const { data: referrerProfile } = await supabase
+          .from('profiles')
+          .select('xp')
+          .eq('id', referrerId)
+          .single();
+        
+        if (referrerProfile) {
+          await supabase
             .from('profiles')
-            .select('xp, referral_invites, referral_xp_earned')
-            .eq('id', referrerId)
-            .single();
-          
-          if (referrerProfile) {
-            await supabase
-              .from('profiles')
-              .update({
-                xp: (referrerProfile.xp || 0) + 50,
-                referral_invites: (referrerProfile.referral_invites || 0) + 1,
-                referral_xp_earned: (referrerProfile.referral_xp_earned || 0) + 50
-              })
-              .eq('id', referrerId);
-          }
-        } catch (err) {
-          console.error('Referrer bonus error:', err);
+            .update({ xp: (referrerProfile.xp || 0) + 50 })
+            .eq('id', referrerId);
         }
       }
       
@@ -231,7 +221,7 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
       
     } catch (err: any) {
       console.error('Signup error:', err);
-      setSignupError(err.message);
+      setSignupError(err.message || 'Failed to sign up. Please try again.');
     } finally {
       setSignupLoading(false);
     }
@@ -374,10 +364,10 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
                 type="text"
                 placeholder="Referral code (optional)"
                 value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                onChange={(e) => setReferralCode(e.target.value.toLowerCase())}
               />
               <div className={styles.referralHint}>
-                <i className="fas fa-gift"></i> Have a friend's code? Enter it here. Both get +50 XP!
+                <i className="fas fa-gift"></i> Have a friend's code? Enter their username. Both get +50 XP!
               </div>
             </div>
             
