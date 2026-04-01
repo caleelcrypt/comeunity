@@ -1,6 +1,6 @@
-/* FeedHeader.module.css - Updated to match BottomNav pattern */
+/* FeedHeader.module.css */
 
-/* Feed Header - Position absolute at top, matching BottomNav */
+/* Feed Header - Position absolute at top, matching BottomNav pattern */
 .feedHeader {
   position: absolute;
   top: 0;
@@ -10,11 +10,7 @@
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-glass, rgba(255, 255, 255, 0.05));
   padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   z-index: 100;
-  flex-shrink: 0;
 }
 
 .headerContent {

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
 import BottomNav from '../Navigation/BottomNav';
-import FeedHeader from '../Navigation/FeedHeader';
+import { FeedHeader } from '../Navigation/FeedHeader';
 import styles from './MainLayout.module.css';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -51,13 +51,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     checkUser();
   }, []);
 
-  // Show header and bottom nav on authenticated pages
-  const showNavigation = !isPublicRoute && user && (
-    pathname === '/feed' || 
-    pathname === '/discover' || 
-    pathname === '/unities' || 
-    pathname === '/profile'
-  );
+  // Show header and bottom nav on ALL authenticated pages (not just specific ones)
+  const showNavigation = !isPublicRoute && user;
 
   // Don't show loading on public routes
   if (loading && !isPublicRoute) {
@@ -71,14 +66,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className={styles.container}>
       <div className={styles.contentWrapper}>
-        {/* Header - Only show on authenticated pages */}
+        {/* Header - Show on all authenticated pages */}
         {showNavigation && (
           <FeedHeader
             onMenuClick={() => setShowSidebar(true)}
             onSearchClick={() => setShowSearchModal(true)}
             onNotificationClick={() => setShowNotificationModal(true)}
             userAvatar={userProfile?.avatar_url}
-            username={userProfile?.username || user?.user_metadata?.username}
+            username={userProfile?.username || user?.user_metadata?.username || 'User'}
             userXp={userProfile?.xp || 0}
             userLevel={userProfile?.level || 1}
             notificationCount={5}
@@ -90,7 +85,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         
-        {/* Bottom Nav - Only show on authenticated pages */}
+        {/* Bottom Nav - Show on all authenticated pages */}
         {showNavigation && (
           <BottomNav 
             currentPage={currentPage} 
@@ -98,6 +93,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           />
         )}
       </div>
+
+      {/* Modals that need to be accessible globally */}
+      {/* These would need to be lifted up or use a context, but for now they can stay in pages */}
     </div>
   );
 }

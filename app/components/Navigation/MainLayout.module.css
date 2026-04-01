@@ -23,7 +23,7 @@
   flex-direction: column;
 }
 
-/* Main content area - scrollable with padding for fixed header and bottom nav */
+/* Main content area - scrollable */
 .main {
   flex: 1;
   overflow-y: auto;

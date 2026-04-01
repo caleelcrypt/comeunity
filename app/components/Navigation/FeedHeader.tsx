@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import styles from './FeedHeader.module.css';
+import { supabase } from '@/lib/supabaseClient';
 
 interface FeedHeaderProps {
   onMenuClick: () => void;
