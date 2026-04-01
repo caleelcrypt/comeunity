@@ -134,14 +134,16 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
       
       console.log('Attempting signup with:', signupEmail);
       
-      // Sign up with Supabase Auth
+      // Sign up with Supabase Auth - let the trigger create the profile
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
           data: {
-            username,
+            username: username,
             full_name: fullName,
+            first_name: firstName,
+            last_name: lastName,
           }
         }
       });
@@ -157,59 +159,35 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
         throw new Error('No user returned from signup');
       }
       
-      // Check if referral code exists
-      let referrerId = null;
+      // Wait for the trigger to create the profile (give it a moment)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check if referral code exists and award bonus
       if (referralCode) {
-        const { data: referrer } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('username', referralCode.toLowerCase())
-          .single();
-        
-        if (referrer) {
-          referrerId = referrer.id;
-        }
-      }
-      
-      // Calculate XP (50 base + 50 referral bonus)
-      const totalXP = referrerId ? 100 : 50;
-      
-      // Create profile with all matching columns
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          username: username,
-          full_name: fullName,
-          avatar_url: `https://ui-avatars.com/api/?background=ff4d6d&color=fff&name=${firstName}+${lastName}`,
-          bio: null,
-          xp: totalXP,
-          coins: 0,
-          level: 1,
-          followers_count: 0,
-          following_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        throw profileError;
-      }
-      
-      // Award referrer bonus if applicable
-      if (referrerId) {
-        const { data: referrerProfile } = await supabase
-          .from('profiles')
-          .select('xp')
-          .eq('id', referrerId)
-          .single();
-        
-        if (referrerProfile) {
-          await supabase
+        try {
+          // Find the referrer by username
+          const { data: referrer } = await supabase
             .from('profiles')
-            .update({ xp: (referrerProfile.xp || 0) + 50 })
-            .eq('id', referrerId);
+            .select('id, xp')
+            .eq('username', referralCode.toLowerCase())
+            .single();
+          
+          if (referrer && referrer.id !== authData.user.id) {
+            // Award referrer bonus (+50 XP)
+            await supabase
+              .from('profiles')
+              .update({ xp: (referrer.xp || 0) + 50 })
+              .eq('id', referrer.id);
+            
+            // Award new user bonus (+50 XP for using referral)
+            await supabase
+              .from('profiles')
+              .update({ xp: 50 })
+              .eq('id', authData.user.id);
+          }
+        } catch (err) {
+          console.error('Referral processing error:', err);
+          // Don't fail signup if referral fails
         }
       }
       
@@ -367,7 +345,7 @@ const AuthForm = ({ mode: initialMode = 'login', referralCode: initialReferralCo
                 onChange={(e) => setReferralCode(e.target.value.toLowerCase())}
               />
               <div className={styles.referralHint}>
-                <i className="fas fa-gift"></i> Have a friend's code? Enter their username. Both get +50 XP!
+                <i className="fas fa-gift"></i> Have a friend's username? Enter it here. Both get +50 XP!
               </div>
             </div>
             
