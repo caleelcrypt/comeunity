@@ -1,6 +1,6 @@
 ﻿// comeunity/app/components/feed/PostCard.tsx
 import React, { useState, useEffect } from 'react';
-import { Post } from '../../types';
+import { Post, ShowToastFunction } from '../../types'; // Add ShowToastFunction import
 import { Avatar } from '../common/Avatar';
 import { LinkPreview } from './LinkPreview';
 import { PostActions } from './PostActions';
@@ -18,7 +18,7 @@ interface PostCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onConfirm: (title: string, message: string, onConfirm: () => void) => void;
-  showToast?: (message: string, type?: string) => void;
+  showToast?: ShowToastFunction; // Change this line
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
@@ -35,6 +35,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   onConfirm,
   showToast
 }) => {
+  // ... rest of the component remains exactly the same
   const hasLink = post.link && post.link.trim() !== "";
   const [showMenu, setShowMenu] = useState(false);
   const isOwnPost = post.is_own_post || false;

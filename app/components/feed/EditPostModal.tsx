@@ -1,13 +1,13 @@
 ﻿// comeunity/app/components/feed/EditPostModal.tsx
 import React, { useState, useEffect } from 'react';
-import { Post } from '../../types';
+import { Post, ShowToastFunction } from '../../types'; // Add ShowToastFunction import
 
 interface EditPostModalProps {
   isOpen: boolean;
   onClose: () => void;
   post: Post | null;
   onUpdatePost: (content: string, link: string | undefined) => Promise<boolean>;
-  showToast: (message: string, type?: string) => void;
+  showToast: ShowToastFunction; // Change this line
 }
 
 export const EditPostModal: React.FC<EditPostModalProps> = ({
@@ -51,7 +51,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
     setIsSubmitting(false);
     
     if (success) {
-      showToast('✨ Post updated successfully!');
+      showToast('✨ Post updated successfully!', 'info'); // Changed to 'info'
       onClose();
     } else {
       showToast('Failed to update post', 'error');

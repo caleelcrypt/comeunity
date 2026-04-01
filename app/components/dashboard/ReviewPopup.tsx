@@ -71,7 +71,7 @@ export const ReviewPopup: React.FC<ReviewPopupProps> = ({
   const getAverageRating = () => {
     if (reviews.length === 0) return 0;
     const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
-    return (sum / reviews.length).toFixed(1);
+    return sum / reviews.length;
   };
 
   const getFilteredReviews = () => {
@@ -81,9 +81,14 @@ export const ReviewPopup: React.FC<ReviewPopupProps> = ({
 
   const renderStars = (rating: number, size: 'small' | 'large' = 'small') => {
     const starClass = size === 'large' ? 'popup-stars-big' : 'review-stars-mini';
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
     return (
       <div className={starClass}>
-        {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
+        {'★'.repeat(fullStars)}
+        {hasHalfStar && '½'}
+        {'☆'.repeat(5 - Math.ceil(rating))}
       </div>
     );
   };
@@ -105,8 +110,8 @@ export const ReviewPopup: React.FC<ReviewPopupProps> = ({
         
         <div className="popup-body">
           <div className="popup-rating-summary">
-            <div className="popup-avg">{avgRating}</div>
-            {renderStars(Math.round(parseFloat(avgRating)), 'large')}
+            <div className="popup-avg">{avgRating.toFixed(1)}</div>
+            {renderStars(avgRating, 'large')}
             <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
               <span>{reviews.length}</span> authentic reviews
             </div>

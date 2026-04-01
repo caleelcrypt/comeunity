@@ -1,5 +1,6 @@
 ﻿// comeunity/app/components/feed/PostActions.tsx
 import React from 'react';
+import { ShowToastFunction } from '../../types'; // Add this import
 
 interface PostActionsProps {
   liked: boolean;
@@ -10,7 +11,7 @@ interface PostActionsProps {
   onTip: () => void;
   onShare: () => void;
   isOwnPost?: boolean;
-  showToast?: (message: string, type?: string) => void;
+  showToast?: ShowToastFunction; // Change this line
 }
 
 export const PostActions: React.FC<PostActionsProps> = ({

@@ -1,8 +1,8 @@
-// comeunity/lib/supabaseServer.ts
+// lib/supabase-server.ts
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export function createClient() {
+export function createClient() {  // Make sure this is exported
   const cookieStore = cookies();
 
   return createServerClient(

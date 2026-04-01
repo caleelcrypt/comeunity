@@ -63,7 +63,8 @@ export const TipModal: React.FC<TipModalProps> = ({
       async () => {
         setIsSending(true);
         try {
-          const { xpGain } = await sendTip(post.author_id, post.id, amount, message || undefined);
+          // FIXED: use user_id instead of author_id
+          const { xpGain } = await sendTip(post.user_id, post.id, amount, message || undefined);
           showToast(`💎 You tipped ${amount} coins to ${post.author_name}! +${xpGain} XP`, 'coin');
           onClose();
         } catch (err) {

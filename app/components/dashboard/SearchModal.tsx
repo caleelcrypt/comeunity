@@ -51,12 +51,12 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     const lowerQuery = query.toLowerCase();
     const newResults: any[] = [];
 
-    // Get unique creators from posts
+    // Get unique creators from posts - FIXED: use user_id instead of author_id
     const creatorMap = new Map<string, Creator>();
     posts.forEach(post => {
-      if (!creatorMap.has(post.author_id)) {
-        creatorMap.set(post.author_id, {
-          id: post.author_id,
+      if (!creatorMap.has(post.user_id)) {
+        creatorMap.set(post.user_id, {
+          id: post.user_id,
           name: post.author_name,
           avatar: post.author_avatar,
           category: post.category

@@ -1,8 +1,11 @@
-﻿'use client';
+﻿// app/page.tsx
+'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import LandingPreview from './auth/components/LandingPreview';
+import AuthForm from './auth/components/AuthForm';
+import styles from './auth/Auth.module.css';
 
 export default function HomePage() {
   const router = useRouter();
@@ -10,39 +13,12 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    let isMounted = true;
-    
     const checkUser = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Session error:', error);
-          if (isMounted) {
-            setUser(null);
-            setLoading(false);
-          }
-          return;
-        }
-        
-        if (isMounted) {
-          setUser(session?.user || null);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        if (isMounted) {
-          setUser(null);
-          setLoading(false);
-        }
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+      setLoading(false);
     };
-
     checkUser();
-    
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   useEffect(() => {
@@ -65,6 +41,21 @@ export default function HomePage() {
     );
   }
 
-  // If not logged in, show landing preview
-  return <LandingPreview />;
+  // If not logged in, show landing page with auth
+  return (
+    <div className={styles.authPage}>
+      <div className={styles.bgAnimation}>
+        <div className={styles.bgGradient}></div>
+        <div className={styles.bgNoise}></div>
+      </div>
+      <div className={styles.appContainer}>
+        <div className={styles.contentWrapper}>
+          <LandingPreview />
+          <div className={styles.authCard}>
+            <AuthForm mode="signup" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

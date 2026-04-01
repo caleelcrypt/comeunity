@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { createClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Referral code required' }, { status: 400 })
     }
     
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createClient()
     
     const { data, error } = await supabase
       .rpc('validate_referral_code', {
@@ -25,3 +25,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
+

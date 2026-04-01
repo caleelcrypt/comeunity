@@ -1,8 +1,6 @@
-﻿'use client';
-import { usePathname } from 'next/navigation';
-import MainLayout from './components/Navigation/MainLayout';
-import './globals.css';
+﻿import './globals.css';
 import { Inter } from 'next/font/google';
+import { ToastProvider } from './components/feed/Toast';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -11,12 +9,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  
-  // Pages that should NOT use MainLayout (no bottom nav, no extra padding)
-  const noLayoutPages = ['/', '/auth', '/publicprofile'];
-  const useMainLayout = !noLayoutPages.includes(pathname);
-  
   return (
     <html lang="en">
       <head>
@@ -26,15 +18,9 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        {useMainLayout ? (
-          <MainLayout>
-            {children}
-          </MainLayout>
-        ) : (
-          <div className="auth-page-container">
-            {children}
-          </div>
-        )}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

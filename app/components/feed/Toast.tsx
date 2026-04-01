@@ -1,12 +1,5 @@
-// comeunity/app/components/feed/Toast.tsx
 import React, { useEffect, useState, useCallback, createContext, useContext } from 'react';
-
-export interface ToastMessage {
-  id: string;
-  message: string;
-  type?: 'info' | 'success' | 'error' | 'xp' | 'coin';
-  duration?: number;
-}
+import { ToastMessage, ShowToastFunction } from '../../types';
 
 interface ToastProps {
   messages: ToastMessage[];
@@ -131,7 +124,7 @@ export const Toast: React.FC<ToastProps> = ({ messages, onRemove }) => {
 
 // Toast Context
 interface ToastContextType {
-  showToast: (message: string, type?: 'info' | 'success' | 'error' | 'xp' | 'coin', duration?: number) => void;
+  showToast: ShowToastFunction;
   hideToast: (id: string) => void;
 }
 
@@ -140,13 +133,13 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [messages, setMessages] = useState<ToastMessage[]>([]);
 
-  const showToast = useCallback((message: string, type: 'info' | 'success' | 'error' | 'xp' | 'coin' = 'info', duration: number = 2500) => {
+  const showToast: ShowToastFunction = useCallback((message: string, type: ToastMessage['type'] = 'info') => {
     const id = Date.now().toString();
-    setMessages(prev => [...prev, { id, message, type, duration }]);
+    setMessages(prev => [...prev, { id, message, type, duration: 2500 }]);
     
     setTimeout(() => {
       setMessages(prev => prev.filter(m => m.id !== id));
-    }, duration);
+    }, 2500);
   }, []);
 
   const hideToast = useCallback((id: string) => {

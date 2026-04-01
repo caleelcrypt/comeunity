@@ -88,7 +88,8 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     const hasReplies = comment.replies && comment.replies.length > 0;
     const showReplies = visibleReplies[comment.id] !== false;
     const repliesToShow = showReplies ? comment.replies : [];
-    const isOwnComment = currentUserId === comment.author_id;
+    // FIXED: use user_id instead of author_id
+    const isOwnComment = currentUserId === comment.user_id;
 
     return (
       <div key={comment.id} className="comment-thread" style={{ marginLeft: depth * 20 }}>

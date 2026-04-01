@@ -131,7 +131,7 @@ export default function FeedPage() {
     }
     const success = await feed.treasurePost(postId);
     if (success) {
-      showToast('💎 Post treasured! +10 XP', 'xp');
+      showToast('💎 Post treasured! +10 XP', 'info'); // Changed from 'xp' to 'info'
       handleCelebration(`You treasured this post! ✨`, 10);
     }
   };
@@ -139,7 +139,7 @@ export default function FeedPage() {
   const handleSharePost = async (postId: string, isOwnPost: boolean) => {
     const success = await feed.sharePost(postId, isOwnPost);
     if (success && !isOwnPost) {
-      showToast('📤 Shared! +10 XP +5 Coins', 'xp');
+      showToast('📤 Shared! +10 XP +5 Coins', 'info'); // Changed from 'xp' to 'info'
     } else if (success) {
       showToast('📤 Shared!', 'info');
     }

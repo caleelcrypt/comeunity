@@ -1,13 +1,14 @@
 ﻿// comeunity/app/components/feed/CreatePostModal.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useMentions } from '../../hooks/useMentions';
+import { ShowToastFunction } from '../../types'; // Add this import
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreatePost: (content: string, link: string | undefined, category: string) => Promise<boolean>;
   onConfirm: (title: string, message: string, onConfirm: () => void) => void;
-  showToast: (message: string, type?: string) => void;
+  showToast: ShowToastFunction; // Change to ShowToastFunction
 }
 
 const CATEGORIES = [
@@ -145,7 +146,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     if (success) {
       const xpAmount = getXpPreview();
       const coinAmount = getCoinPreview();
-      showToast(`✨ Post shared! +${xpAmount} XP +${coinAmount} Coins`, 'xp');
+      showToast(`✨ Post shared! +${xpAmount} XP +${coinAmount} Coins`, 'info'); // Changed from 'xp' to 'info'
       onClose();
     } else {
       showToast('Failed to create post. Please try again.', 'error');
