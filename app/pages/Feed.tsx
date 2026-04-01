@@ -2,16 +2,56 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
+import { useFeed } from '../hooks/useFeed';
+import { useToast } from '../hooks/useToast';
+import { CreatePostBar } from '../components/feed/CreatePostBar';
+import { CategoryTabs } from '../components/feed/CategoryTabs';
+import { PostCard } from '../components/feed/PostCard';
+import { CreatePostModal } from '../components/feed/CreatePostModal';
+import { CommentModal } from '../components/feed/CommentModal';
+import { TipModal } from '../components/feed/TipModal';
+import { ShareModal } from '../components/feed/ShareModal';
+import { ReportModal } from '../components/feed/ReportModal';
+import { ConfirmModal } from '../components/feed/ConfirmModal';
+import { CelebrationPopup } from '../components/feed/CelebrationPopup';
+import { EmptyFeed } from '../components/feed/EmptyFeed';
+import { DashboardSidebar } from '../components/dashboard/DashboardSidebar';
+import { SearchModal } from '../components/dashboard/SearchModal';
+import { NotificationModal } from '../components/dashboard/NotificationModal';
+import { ReviewPopup } from '../components/dashboard/ReviewPopup';
+import { Post } from '../types';
 import styles from './Feed.module.css';
 
 export default function FeedPage() {
   const router = useRouter();
+  const { showToast } = useToast();
+  const feed = useFeed();
+  
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [username, setUsername] = useState<string>('me');
+  const [userProfile, setUserProfile] = useState<any>(null);
+  
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [showTipModal, setShowTipModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showReviewPopup, setShowReviewPopup] = useState(false);
+  
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [confirmConfig, setConfirmConfig] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [celebrationConfig, setCelebrationConfig] = useState<{ message: string; xp: number } | null>(null);
 
+  // Fetch user data on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchUserData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.user) {
@@ -21,38 +61,54 @@ export default function FeedPage() {
 
       setUser(session.user);
 
-      // Fetch username
-      const userMetadata = session.user.user_metadata;
-      if (userMetadata?.username) {
-        setUsername(userMetadata.username);
-      } else {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', session.user.id)
-          .single();
-        if (profile?.username) {
-          setUsername(profile.username);
-        }
+      // Fetch username and profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url, xp, level, coins')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (profile) {
+        setUsername(profile.username);
+        setUserProfile(profile);
       }
 
       setLoading(false);
     };
 
-    fetchData();
+    fetchUserData();
   }, [router]);
- 
-  
-  const handleVisitProfile = () => {
-    router.push(`/profile/${username}`);
+
+  const handleOpenComment = (post: Post) => {
+    setSelectedPost(post);
+    setShowCommentModal(true);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  }; 
+  const handleOpenTip = (post: Post) => {
+    setSelectedPost(post);
+    setShowTipModal(true);
+  };
 
-  
+  const handleOpenShare = (post: Post) => {
+    setSelectedPost(post);
+    setShowShareModal(true);
+  };
+
+  const handleOpenReport = (post: Post) => {
+    setSelectedPost(post);
+    setShowReportModal(true);
+  };
+
+  const handleConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmConfig({ title, message, onConfirm });
+    setShowConfirmModal(true);
+  };
+
+  const handleCelebration = (message: string, xp: number) => {
+    setCelebrationConfig({ message, xp });
+    setShowCelebration(true);
+    setTimeout(() => setShowCelebration(false), 5000);
+  };
 
   if (loading) {
     return (
@@ -66,114 +122,124 @@ export default function FeedPage() {
   return (
     <div className={styles.feedContainer}>
       <div className={styles.phoneFrame}>
-        {/* Fixed Header */}
-        <header className={styles.fixedHeader}>
-          <div className={styles.headerContent}>
-            <div className={styles.logo}>
-              <span className={styles.logoGradient}>COME</span>UNITY
-            </div>
-            
-            <div className={styles.headerActions}>
-              <div className={styles.searchBar}>
-                <i className="fas fa-search"></i>
-                <input type="text" placeholder="Search..." />
+        {/* Main Feed Content - Header is now handled by MainLayout */}
+        <main className={styles.mainContent}>
+          <CreatePostBar onClick={() => setShowCreateModal(true)} />
+          
+          <CategoryTabs 
+            activeCategory={feed.filter} 
+            onCategoryChange={feed.setFilter} 
+          />
+          
+          <div className={styles.feedList}>
+            {feed.loading && feed.posts.length === 0 ? (
+              <div className={styles.loadingFeed}>
+                <i className="fas fa-spinner fa-spin"></i>
+                <p>Loading posts...</p>
               </div>
-              <button className={styles.notificationBtn}>
-                <i className="far fa-bell"></i>
-              </button>
-              <button onClick={handleLogout} className={styles.logoutBtn}>
-                <i className="fas fa-sign-out-alt"></i>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Scrollable Content */}
-        <main className={styles.scrollableContent}>
-          <div className={styles.mainContent}>
-            {/* Welcome Section */}
-            <div className={styles.welcomeSection}>
-              <h1 className={styles.title}>
-                Welcome back, <span className={styles.gradient}>{user?.user_metadata?.first_name || 'Creator'}</span>!
-              </h1>
-              <p className={styles.subtitle}>
-                Your streak is building. Keep creating and sharing your art with the community.
-              </p>
-              <button onClick={handleVisitProfile} className={styles.profileBtn}>
-                Visit Your Profile →
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className={styles.statsContainer}>
-              <div className={styles.statItem}>
-                <div className={styles.statNumber}>10K+</div>
-                <div className={styles.statLabel}>Active Creators</div>
-              </div>
-              <div className={styles.statItem}>
-                <div className={styles.statNumber}>50K+</div>
-                <div className={styles.statLabel}>Posts Shared</div>
-              </div>
-              <div className={styles.statItem}>
-                <div className={styles.statNumber}>100K+</div>
-                <div className={styles.statLabel}>Community Members</div>
-              </div>
-            </div>
-
-            {/* Features Section */}
-            <div className={styles.featuresSection}>
-              <h2 className={styles.sectionTitle}>Why Join ComeUnity?</h2>
-              <div className={styles.featuresGrid}>
-                <div className={styles.featureCard}>
-                  <div className={styles.featureIcon}>🎨</div>
-                  <h3>Share Your Art</h3>
-                  <p>Post your creations and get feedback</p>
-                </div>
-                <div className={styles.featureCard}>
-                  <div className={styles.featureIcon}>🏆</div>
-                  <h3>Earn Rewards</h3>
-                  <p>Get XP, coins, and exclusive badges</p>
-                </div>
-                <div className={styles.featureCard}>
-                  <div className={styles.featureIcon}>👥</div>
-                  <h3>Build Community</h3>
-                  <p>Join Unities, collaborate, grow together</p>
-                </div>
-                <div className={styles.featureCard}>
-                  <div className={styles.featureIcon}>🛍️</div>
-                  <h3>Collect Avatars</h3>
-                  <p>Unlock 50+ unique avatars</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Avatar Preview */}
-            <div className={styles.avatarSection}>
-              <h2 className={styles.sectionTitle}>50+ Unique Avatars</h2>
-              <p className={styles.sectionSubtitle}>Express yourself with collectible avatars</p>
-              <div className={styles.avatarGrid}>
-                {['😎', '🥷', '🤖', '👽', '🐉', '🔥', '👑', '🌌'].map((emoji, i) => (
-                  <div key={i} className={styles.avatarItem}>
-                    {emoji}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <footer className={styles.footer}>
-              <div className={styles.footerLogo}>COMEUNITY</div>
-              <p className={styles.footerText}>Create. Connect. Collab.</p>
-              <div className={styles.footerLinks}>
-                <a href="/about">About</a>
-                <a href="/terms">Terms</a>
-                <a href="/privacy">Privacy</a>
-                <a href="/contact">Contact</a>
-              </div>
-              <p className={styles.copyright}>© 2024 ComeUnity. All rights reserved.</p>
-            </footer>
+            ) : feed.posts.length === 0 ? (
+              <EmptyFeed onCreatePost={() => setShowCreateModal(true)} />
+            ) : (
+              feed.posts.map(post => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onLike={() => feed.toggleLike(post.id)}
+                  onFollow={() => feed.toggleFollow(post.author_id, post.id)}
+                  onReport={() => handleOpenReport(post)}
+                  onComment={() => handleOpenComment(post)}
+                  onTip={() => handleOpenTip(post)}
+                  onShare={() => handleOpenShare(post)}
+                  onConfirm={handleConfirm}
+                />
+              ))
+            )}
           </div>
         </main>
+
+        {/* Modals */}
+        <CreatePostModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreatePost={feed.createPost}
+          onConfirm={handleConfirm}
+          showToast={showToast}
+        />
+
+        <CommentModal
+          isOpen={showCommentModal}
+          onClose={() => setShowCommentModal(false)}
+          post={selectedPost}
+          onConfirm={handleConfirm}
+          showToast={showToast}
+        />
+
+        <TipModal
+          isOpen={showTipModal}
+          onClose={() => setShowTipModal(false)}
+          post={selectedPost}
+          onConfirm={handleConfirm}
+          showToast={showToast}
+          onCelebration={handleCelebration}
+        />
+
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          post={selectedPost}
+          showToast={showToast}
+          onCelebration={handleCelebration}
+        />
+
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          post={selectedPost}
+          onSubmitReport={feed.reportPost}
+          onConfirm={handleConfirm}
+          showToast={showToast}
+        />
+
+        <ConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          config={confirmConfig}
+        />
+
+        <CelebrationPopup
+          isOpen={showCelebration}
+          config={celebrationConfig}
+          onClose={() => setShowCelebration(false)}
+        />
+
+        <DashboardSidebar
+          isOpen={showSidebar}
+          onClose={() => setShowSidebar(false)}
+          onOpenReviews={() => setShowReviewPopup(true)}
+          showToast={showToast}
+          userProfile={userProfile}
+        />
+
+        <SearchModal
+          isOpen={showSearchModal}
+          onClose={() => setShowSearchModal(false)}
+          posts={feed.posts}
+          showToast={showToast}
+        />
+
+        <NotificationModal
+          isOpen={showNotificationModal}
+          onClose={() => setShowNotificationModal(false)}
+          showToast={showToast}
+          onConfirm={handleConfirm}
+        />
+
+        <ReviewPopup
+          isOpen={showReviewPopup}
+          onClose={() => setShowReviewPopup(false)}
+          showToast={showToast}
+          onConfirm={handleConfirm}
+        />
       </div>
     </div>
   );

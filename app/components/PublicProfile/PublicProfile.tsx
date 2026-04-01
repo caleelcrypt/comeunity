@@ -167,6 +167,11 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username }) => {
     }
   }, [username, currentUserId]);
 
+   // ADD THIS useEffect HERE - after other useEffects
+  useEffect(() => {
+    console.log('🏆 Achievements state updated:', achievements);
+    console.log('🏆 Unlocked achievements:', achievements.filter(a => a.unlocked));
+  }, [achievements]);
   const getCurrentUser = async () => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -209,59 +214,70 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ username }) => {
   };
 
   const fetchAchievements = async (userId: string) => {
-    try {
-      console.log('🏆 Fetching achievements for user:', userId);
-      
-      const { data: allAchievementsData, error: allError } = await supabase
-        .from('achievements')
-        .select('*')
-        .order('id');
-      
-      if (allError) {
-        console.error('❌ Error fetching all achievements:', allError);
-        return;
-      }
-      
-      console.log('📋 Total achievements in DB:', allAchievementsData?.length);
-      
-      const { data: userAchievementsData, error: userError } = await supabase
-        .from('user_achievements')
-        .select('achievement_id')
-        .eq('user_id', userId);
-      
-      if (userError) {
-        console.error('❌ Error fetching user achievements:', userError);
-        if (userError.code === '42P01') {
-          console.log('⚠️ user_achievements table not found, creating empty achievements');
-          setAchievements([]);
-          return;
-        }
-      }
-      
-      const unlockedIds = userAchievementsData?.map(ua => ua.achievement_id) || [];
-      console.log('🔓 Unlocked achievement IDs:', unlockedIds);
-      
-      const achievementsWithStatus: Achievement[] = (allAchievementsData || []).map(achievement => ({
+  try {
+    console.log('🏆 Fetching achievements for user:', userId);
+    
+    // First, check if achievements table exists and has data
+    const { data: testData, error: testError } = await supabase
+      .from('achievements')
+      .select('count')
+      .limit(1);
+    
+    console.log('📊 Achievements table check:', { testData, testError });
+    
+    // Get all achievements
+    const { data: allAchievementsData, error: allError } = await supabase
+      .from('achievements')
+      .select('*')
+      .order('id');
+    
+    if (allError) {
+      console.error('❌ Error fetching all achievements:', allError);
+      return;
+    }
+    
+    console.log('📋 Total achievements in DB:', allAchievementsData?.length);
+    console.log('📋 First few achievements:', allAchievementsData?.slice(0, 5));
+    
+    // Get user's unlocked achievements
+    const { data: userAchievementsData, error: userError } = await supabase
+      .from('user_achievements')
+      .select('achievement_id')
+      .eq('user_id', userId);
+    
+    if (userError) {
+      console.error('❌ Error fetching user achievements:', userError);
+      return;
+    }
+    
+    console.log('🔓 User unlocked achievement IDs:', userAchievementsData);
+    console.log('🔓 User unlocked count:', userAchievementsData?.length);
+    
+    const unlockedIds = userAchievementsData?.map(ua => ua.achievement_id) || [];
+    
+    // Create achievements array with unlocked status
+    const achievementsWithStatus: Achievement[] = (allAchievementsData || []).map(achievement => {
+      const isUnlocked = unlockedIds.includes(achievement.id);
+      return {
         id: achievement.id,
         name: achievement.name,
         icon: achievement.icon,
-        description: achievement.description,
+        description: achievement.description || 'No description',
         requirement_type: achievement.requirement_type,
         requirement_value: achievement.requirement_value,
-        unlocked: unlockedIds.includes(achievement.id)
-      }));
-      
-      console.log('🏆 Achievements loaded:', achievementsWithStatus.length);
-      console.log('🏆 Unlocked count:', achievementsWithStatus.filter(a => a.unlocked).length);
-      
-      setAchievements(achievementsWithStatus);
-      
-    } catch (error) {
-      console.error('❌ Error in fetchAchievements:', error);
-      setAchievements([]);
-    }
-  };
-
+        unlocked: isUnlocked
+      };
+    });
+    
+    console.log('✅ Achievements processed:', achievementsWithStatus.length);
+    console.log('✅ Unlocked count:', achievementsWithStatus.filter(a => a.unlocked).length);
+    
+    setAchievements(achievementsWithStatus);
+    
+  } catch (error) {
+    console.error('❌ Error in fetchAchievements:', error);
+  }
+};
   const fetchProfile = async () => {
     console.log('🚀 FETCHING PROFILE FOR USERNAME:', username);
     setLoading(true);

@@ -1,50 +1,46 @@
-/* BottomNav.module.css */
-
+/* Bottom Navigation - Matches original positioning */
 .bottomNav {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  max-width: 500px;
-  margin: 0 auto;
   background: rgba(10, 10, 15, 0.95);
   backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 77, 109, 0.2);
-  padding: 8px 16px 18px;
+  border-top: 1px solid var(--border-glass, rgba(255, 255, 255, 0.05));
+  padding: 8px 24px;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
-  z-index: 1000;
-  flex-shrink: 0;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 100;
 }
 
+/* Nav Item - Matches original dimensions */
 .navItem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.5);
-  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  font-size: 12px;
+  transition: all 0.2s;
   position: relative;
   padding: 4px 0;
   flex: 1;
   border: none;
   background: transparent;
-  max-width: 80px;
 }
 
 .navItem i {
-  font-size: 24px;
-  transition: all 0.3s ease;
+  font-size: 20px;
+  transition: all 0.2s;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .navItem span {
   font-size: 11px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
 }
 
 .navItem:hover {
@@ -53,19 +49,20 @@
 }
 
 .navItem:hover i {
-  background: linear-gradient(135deg, #ff6b6b, #a259ff);
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-2, #b5179e));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
+/* Active State - Matches original */
 .navItem.active {
   color: white;
   transform: translateY(-2px);
 }
 
 .navItem.active i {
-  background: linear-gradient(135deg, #ff6b6b, #a259ff);
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-2, #b5179e));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -73,7 +70,7 @@
 }
 
 .navItem.active span {
-  background: linear-gradient(135deg, #ffb347, #ff6b6b);
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-2, #b5179e));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -88,9 +85,40 @@
   transform: translateX(-50%);
   width: 28px;
   height: 3px;
-  background: linear-gradient(90deg, #ff6b6b, #a259ff);
+  background: linear-gradient(90deg, var(--gradient-1, #ff4d6d), var(--gradient-2, #b5179e));
   border-radius: 4px;
   animation: fadeSlideUp 0.3s ease-out;
+}
+
+/* Coming Soon styling */
+.navItem.comingSoon {
+  cursor: pointer;
+  position: relative;
+}
+
+.comingSoonBadge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-2, #b5179e));
+  font-size: 8px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 12px;
+  color: white;
+  white-space: nowrap;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
 }
 
 @keyframes fadeSlideUp {
@@ -109,10 +137,60 @@
   transition: transform 0.1s ease-out;
 }
 
-/* Responsive - Full width on mobile, phone frame on desktop */
+/* Toast notification styling - Matches original */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-3, #4361ee));
+  padding: 12px 24px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 2100;
+  animation: slideUp 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast i {
+  font-size: 14px;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.toastExit {
+  animation: slideDown 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+}
+
+/* Responsive */
 @media (max-width: 500px) {
   .bottomNav {
-    max-width: 100%;
     left: 0;
     right: 0;
   }
@@ -135,6 +213,19 @@
     width: 24px;
     height: 2px;
     bottom: -4px;
+  }
+  
+  .comingSoonBadge {
+    font-size: 7px;
+    padding: 2px 4px;
+    top: -6px;
+    right: -6px;
+  }
+  
+  .toast {
+    font-size: 12px;
+    padding: 10px 20px;
+    bottom: 90px;
   }
 }
 

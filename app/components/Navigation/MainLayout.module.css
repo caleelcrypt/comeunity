@@ -1,35 +1,70 @@
+/* MainLayout.module.css */
+
 .container {
   min-height: 100vh;
-  background: #0a0a0f;
+  background: var(--bg-primary, #0a0a0f);
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .contentWrapper {
   position: relative;
-  min-height: 100vh;
-  max-width: 480px;
-  margin: 0 auto;
-  background: #0a0a0f;
+  width: 380px;
+  height: 780px;
+  background: var(--bg-primary, #0a0a0f);
+  border-radius: 40px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
 }
 
+/* Main content area - scrollable with padding for fixed header and bottom nav */
 .main {
-  padding: 0;
-  margin: 0;
-  min-height: 100vh;
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 80px;      /* Space for fixed header */
+  padding-bottom: 80px;   /* Space for fixed bottom nav */
+  padding-left: 0;
+  padding-right: 0;
+  position: relative;
+  z-index: 1;
 }
 
+/* Custom scrollbar */
+.main::-webkit-scrollbar {
+  width: 4px;
+}
+
+.main::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.main::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--gradient-1, #ff4d6d), var(--gradient-2, #b5179e));
+  border-radius: 4px;
+}
+
+/* Loading States */
 .loadingContainer {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #0a0a0f;
+  background: var(--bg-primary, #0a0a0f);
+  gap: 16px;
 }
 
 .spinner {
   width: 40px;
   height: 40px;
   border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #ff4d6d;
+  border-top-color: var(--gradient-1, #ff4d6d);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -37,5 +72,26 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 500px) {
+  .contentWrapper {
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+  }
+  
+  .main {
+    padding-top: 76px;
+    padding-bottom: 76px;
+  }
+}
+
+@media (max-width: 380px) {
+  .main {
+    padding-top: 72px;
+    padding-bottom: 72px;
   }
 }
